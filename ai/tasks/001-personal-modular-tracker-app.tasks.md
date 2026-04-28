@@ -50,7 +50,7 @@
 - [x] Implement Jurnal Harian service and handlers.
 - [x] Implement dashboard summary service and handler.
 - [x] Implement contribution graph service and handler.
-- [ ] Register all MVP API routes.
+- [x] Register all MVP API routes.
 
 ## Frontend Foundation
 

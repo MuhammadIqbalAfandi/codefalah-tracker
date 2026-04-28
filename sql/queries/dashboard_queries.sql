@@ -1,0 +1,101 @@
+-- name: GetDashboardSummary :one
+SELECT
+    COALESCE(
+        (
+            SELECT
+                (sholat_records.subuh_done::int +
+                sholat_records.dzuhur_done::int +
+                sholat_records.ashar_done::int +
+                sholat_records.maghrib_done::int +
+                sholat_records.isya_done::int)
+            FROM sholat_records
+            WHERE sholat_records.record_date = $1
+        ),
+        0
+    ) AS sholat_completed_count,
+    COALESCE(
+        (
+            SELECT puasa_records.is_completed::int
+            FROM puasa_records
+            WHERE puasa_records.record_date = $1
+        ),
+        0
+    ) AS puasa_completed_count,
+    COALESCE(
+        (
+            SELECT SUM(finance_transactions.amount)
+            FROM finance_transactions
+            WHERE finance_transactions.transaction_type = 'income'
+              AND DATE_TRUNC('month', finance_transactions.transaction_date) = DATE_TRUNC('month', $1::date)
+        ),
+        0
+    ) AS month_income_total,
+    COALESCE(
+        (
+            SELECT SUM(finance_transactions.amount)
+            FROM finance_transactions
+            WHERE finance_transactions.transaction_type = 'expense'
+              AND DATE_TRUNC('month', finance_transactions.transaction_date) = DATE_TRUNC('month', $1::date)
+        ),
+        0
+    ) AS month_expense_total,
+    COALESCE(
+        (
+            SELECT COUNT(*)
+            FROM sport_records
+            WHERE sport_records.is_completed = TRUE
+              AND sport_records.record_date BETWEEN ($1::date - INTERVAL '6 days') AND $1::date
+        ),
+        0
+    ) AS week_sport_completed_count,
+    EXISTS (
+        SELECT 1
+        FROM journal_entries
+        WHERE journal_entries.entry_date = $1
+    ) AS has_journal_entry;
+
+-- name: GetContributionGraph :many
+WITH days AS (
+    SELECT GENERATE_SERIES($1::date, $2::date, INTERVAL '1 day')::date AS day
+)
+SELECT
+    days.day,
+    COALESCE(sholat.completed_count, 0) +
+    COALESCE(puasa.completed_count, 0) +
+    COALESCE(sport.completed_count, 0) +
+    COALESCE(journal.completed_count, 0) AS completed_count
+FROM days
+LEFT JOIN (
+    SELECT
+        sholat_records.record_date,
+        (sholat_records.subuh_done::int +
+        sholat_records.dzuhur_done::int +
+        sholat_records.ashar_done::int +
+        sholat_records.maghrib_done::int +
+        sholat_records.isya_done::int) AS completed_count
+    FROM sholat_records
+) AS sholat
+    ON sholat.record_date = days.day
+LEFT JOIN (
+    SELECT
+        puasa_records.record_date,
+        puasa_records.is_completed::int AS completed_count
+    FROM puasa_records
+) AS puasa
+    ON puasa.record_date = days.day
+LEFT JOIN (
+    SELECT
+        sport_records.record_date,
+        COUNT(*) FILTER (WHERE sport_records.is_completed = TRUE)::int AS completed_count
+    FROM sport_records
+    GROUP BY record_date
+) AS sport
+    ON sport.record_date = days.day
+LEFT JOIN (
+    SELECT
+        journal_entries.entry_date,
+        1 AS completed_count
+    FROM journal_entries
+) AS journal
+    ON journal.entry_date = days.day
+ORDER BY days.day;

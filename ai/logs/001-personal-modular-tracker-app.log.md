@@ -1210,3 +1210,69 @@ Added the contribution graph service and handler layers. The service wraps the g
 ### Next Suggested Task
 
 Register all MVP API routes.
+
+## Implementation Entry 32
+
+### Date
+
+2026-04-29
+
+### Completed Task
+
+Register all MVP API routes.
+
+### Changed Files
+
+- `/internal/handlers/router.go`
+- `/ai/tasks/001-personal-modular-tracker-app.tasks.md`
+- `/ai/logs/001-personal-modular-tracker-app.log.md`
+
+### Summary of Changes
+
+Registered the MVP backend API routes in the chi router. The router now accepts a `RouterHandlers` set and wires dashboard, contribution graph, Sholat, Puasa, Keuangan, Olahraga, and Jurnal Harian endpoints under `/api`, while keeping `/health` available at the root.
+
+### Registered Routes
+
+- `GET /health`
+- `GET /api/dashboard/summary`
+- `GET /api/dashboard/contribution-graph`
+- `GET /api/sholat-records`
+- `POST /api/sholat-records`
+- `GET /api/sholat-records/{date}`
+- `PUT /api/sholat-records/{date}`
+- `DELETE /api/sholat-records/{date}`
+- `GET /api/puasa-records`
+- `POST /api/puasa-records`
+- `GET /api/puasa-records/{date}`
+- `PUT /api/puasa-records/{date}`
+- `DELETE /api/puasa-records/{date}`
+- `GET /api/finance-transactions`
+- `POST /api/finance-transactions`
+- `GET /api/finance-transactions/{id}`
+- `PUT /api/finance-transactions/{id}`
+- `DELETE /api/finance-transactions/{id}`
+- `GET /api/sport-records`
+- `POST /api/sport-records`
+- `GET /api/sport-records/{id}`
+- `PUT /api/sport-records/{id}`
+- `DELETE /api/sport-records/{id}`
+- `GET /api/journal-entries`
+- `POST /api/journal-entries`
+- `GET /api/journal-entries/{date}`
+- `PUT /api/journal-entries/{date}`
+- `DELETE /api/journal-entries/{date}`
+
+### Notes
+
+- This task only registers routes in the router layer.
+- Runtime startup wiring, database-backed handler construction, and `main.go` changes remain separate future work.
+- Route paths use explicit module resource names to stay simple and RESTful for the MVP.
+
+### Known Issues
+
+- The router requires constructed handler dependencies before API routes can serve requests.
+- Full build verification is still blocked until the Go module setup is completed.
+
+### Next Suggested Task
+
+Create or align the frontend folder structure with the tech stack.
