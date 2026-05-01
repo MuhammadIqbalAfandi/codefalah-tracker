@@ -43,28 +43,42 @@ Provide a consistent, scalable, and maintainable full stack architecture with cl
 
 ## 🗂 Folder Structure (Recommended)
 
+Generated projects must use separated root folders:
+
+```md
+backend/ # Go API service and backend-only files
+frontend/ # React Router app and frontend-only files
+```
+
+Backend files must be placed inside `backend/`.
+Frontend files must be placed inside `frontend/`.
+Do not generate backend files at the project root unless explicitly requested.
+Do not generate frontend files at the project root unless explicitly requested.
+
 ### Backend
 
 ```md
-cmd/ # main applications
-├── app/ # application entry point
-internal/ # private application code
-├── handlers/ # HTTP handlers
-├── models/ # data models
-├── services/ # business logic
-├── middleware/ # custom middleware
-├── db/ # database connection and queries
-pkg/ # public libraries
-├── config/ # configuration
-├── logger/ # logging utilities
-migrations/ # database migrations (golang-migrate)
-sql/ # sqlc generated code
+backend/
+├── cmd/ # main applications
+│ └── app/ # application entry point
+├── internal/ # private application code
+│ ├── handlers/ # HTTP handlers
+│ ├── models/ # data models
+│ ├── services/ # business logic
+│ ├── middleware/ # custom middleware
+│ └── db/ # database connection and queries
+├── pkg/ # public libraries
+│ ├── config/ # configuration
+│ └── logger/ # logging utilities
+├── migrations/ # database migrations (golang-migrate)
+└── sql/ # sqlc generated code
 ```
 
 ### Frontend
 
 ```md
-src/
+frontend/
+└── src/
 ├── routes/ # route modules (React Router framework mode)
 ├── components/ # reusable UI components
 ├── features/ # domain-based modules
@@ -75,6 +89,36 @@ src/
 ├── services/ # API client layer
 └── styles/ # global styles
 ```
+
+---
+
+## 🛠 Generation & Setup Rules
+
+When generating a new project, create and initialize both apps in their own folders:
+
+- Create the backend inside `backend/`
+- Create the frontend inside `frontend/`
+- Run backend dependency installation commands inside `backend/`
+- Run frontend dependency installation commands inside `frontend/`
+- Do not only print installation commands unless the user explicitly asks for manual setup
+- If a command cannot be executed, explain the reason clearly and list the exact command the user must run manually
+
+Expected setup flow:
+
+```sh
+mkdir -p backend frontend
+
+cd backend
+go mod init <module-name>
+go get github.com/go-chi/chi/v5
+go get github.com/go-playground/validator/v10
+go mod tidy
+
+cd ../frontend
+npm install
+```
+
+If the frontend is scaffolded with a tool such as React Router, Vite, or another generator, run the scaffold command first, then run package installation in `frontend/`.
 
 ---
 

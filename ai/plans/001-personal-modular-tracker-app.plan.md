@@ -2,182 +2,196 @@
 
 ## Summary
 
-Build the MVP foundation for a personal modular tracker app with a separated Go backend and React Router frontend.
+Build the Personal Modular Tracker App MVP as a separated full stack application with a Go API backend and React Router frontend.
 
-The MVP should focus on a practical first version: dashboard, modular navigation, Sholat Tracker, Puasa Tracker, Keuangan Tracker, Olahraga Tracker, Jurnal Harian, and simple contribution graph support.
-
-The implementation should be incremental. Each task should be completed, logged, and reviewed before moving to the next task.
+The MVP should establish the app foundation, module navigation, basic persistence, simple CRUD-style tracker flows, dashboard summaries, and contribution graph data for the selected initial modules.
 
 ## Scope
 
-In scope for the MVP:
+Included in the MVP:
 
-- Backend project foundation using Go, `net/http`, chi, slog, validator, PostgreSQL, golang-migrate, sqlc, and `database/sql`.
-- Frontend project foundation using React Router v7 framework mode, Shadcn UI, and Tailwind CSS.
-- Database schema for MVP tracker modules.
-- RESTful API endpoints for MVP tracker records.
-- Dashboard summary API.
-- Frontend routes for dashboard and MVP modules.
-- Basic input, checklist, history, and summary views.
-- Simple contribution graph data and UI.
-- Focused validation, error handling, and empty states.
-- Manual verification notes or tests appropriate to the existing project setup.
+- Backend app foundation in `backend/`
+- Frontend app foundation in `frontend/`
+- Dashboard summary API and UI
+- Simple contribution graph API and UI
+- Sholat Tracker
+- Puasa Tracker
+- Keuangan Tracker
+- Olahraga Tracker
+- Jurnal Harian
+- Basic create, list, update, and delete behavior where appropriate
+- Simple statistics and summaries for dashboard/module views
 
-Out of scope for the MVP:
+Not included in the MVP:
 
-- Non-MVP modules such as Makan, Minum, Jadwal, Habit, Tidur, Belajar, Ibadah Tambahan, and Target Hidup.
-- Reminder and notification system.
-- Public social diary features.
-- External integrations.
-- Advanced analytics or complex reporting.
-- Mobile app packaging.
+- Non-MVP tracker modules
+- Public social diary features
+- Likes, comments, follow behavior, or public feeds
+- Advanced reminder/notification system
+- External integrations
+- Mobile packaging
 
-## Assumptions
+## Architecture
 
-- The repository may not yet contain application code; if missing, create the minimum separated backend/frontend structure from `/ai/context/tech-stack.md`.
-- The app is for a single user unless authentication is introduced later as a separate feature.
-- Jurnal Harian starts as a private diary timeline, not a public social feature.
-- Contribution graph can start with simple daily completion counts or completion status per module.
-- MVP tracker data can use clear per-module tables instead of one overly generic tracker table.
+Use separated root folders:
 
-## Process Flow
+- `backend/` for the Go API service.
+- `frontend/` for the React Router application.
 
-1. User opens the frontend app.
-2. Frontend loads the dashboard route.
-3. Dashboard requests summary data from the backend.
-4. User opens one tracker module from navigation.
-5. Frontend loads tracker records and current-day status.
-6. User creates or updates a tracker record through a form or checklist.
-7. Backend validates input, persists the record, and returns the updated data.
-8. Frontend refreshes the tracker view, dashboard summary, and contribution data as needed.
+Backend responsibilities:
 
-## Data Model Direction
+- HTTP routing with chi.
+- Request validation with validator.
+- Structured logging with slog.
+- PostgreSQL persistence through `database/sql` and sqlc-generated queries.
+- Database migrations through golang-migrate.
+- RESTful JSON API endpoints for dashboard and MVP modules.
 
-Use simple MVP-oriented tables for:
+Frontend responsibilities:
 
-- Sholat daily records.
-- Puasa records.
-- Finance transactions or monthly budget data.
-- Sport activity records.
-- Journal entries.
+- React Router v7 framework-mode routes.
+- Route loaders/actions for server interaction where suitable.
+- API client helpers in `frontend/src/services/`.
+- Domain UI under `frontend/src/features/`.
+- Reusable components under `frontend/src/components/`.
+- Styling through Tailwind CSS and Shadcn UI.
 
-Each table should include timestamps and fields needed for the module's expected behavior. Use migrations for schema changes and sqlc query files for typed database access.
+## Data Flow
 
-Avoid premature generalization. A shared summary or contribution endpoint can aggregate data from module-specific tables.
+Typical record creation flow:
 
-## Backend Implementation Strategy
+1. User opens a module route in the frontend.
+2. User submits a small form or checklist action.
+3. React Router action or route handler calls the frontend API client.
+4. API client sends a request to the Go backend.
+5. Backend validates the request.
+6. Backend stores the record using sqlc queries and PostgreSQL.
+7. Backend returns the created or updated record.
+8. Frontend refreshes the module history and summary.
+9. Dashboard and contribution graph data reflect the updated records.
 
-- Create or follow the Go backend structure from the tech stack.
-- Add configuration and database connection setup.
-- Add migration files for MVP tables.
-- Add sqlc query files for CRUD and summary needs.
-- Add services for module business logic and dashboard aggregation.
-- Add handlers for RESTful endpoints.
-- Add validation structs and request handling.
-- Add clear error responses.
-- Add basic tests where practical, or document manual verification steps if the project has no test setup yet.
+Typical dashboard flow:
 
-## Frontend Implementation Strategy
-
-- Create or follow the React Router v7 framework mode structure from the tech stack.
-- Add layout and navigation for dashboard and MVP modules.
-- Add route modules for each MVP tracker.
-- Add API client functions in the frontend service layer.
-- Add small reusable UI components for summary cards, tracker forms, checklists, history lists, and contribution graph.
-- Use React Hook Form and Zod only where form complexity justifies them.
-- Keep local UI state local. Use Zustand only if shared state becomes necessary.
-- Add loading, empty, success, and error states.
+1. User opens the dashboard route.
+2. Frontend loads dashboard summary data from the backend.
+3. Backend aggregates MVP module records for the current day/month.
+4. Frontend renders summary cards, quick module links, and contribution graph data.
 
 ## Implementation Steps
 
-1. Inspect repository structure and confirm whether backend/frontend scaffolding already exists.
-2. Create any missing workflow-compatible project folders required for the app foundation.
-3. Set up backend application entry point, router, config, logger, database connection, and health endpoint.
-4. Set up frontend app foundation, layout, navigation, and dashboard route.
-5. Create database migrations for MVP tracker tables.
-6. Create sqlc query definitions for MVP tracker CRUD and summary data.
-7. Implement backend services and handlers for Sholat Tracker.
-8. Implement backend services and handlers for Puasa Tracker.
-9. Implement backend services and handlers for Keuangan Tracker.
-10. Implement backend services and handlers for Olahraga Tracker.
-11. Implement backend services and handlers for Jurnal Harian.
-12. Implement dashboard summary and contribution graph endpoints.
-13. Implement frontend Sholat Tracker route and UI.
-14. Implement frontend Puasa Tracker route and UI.
-15. Implement frontend Keuangan Tracker route and UI.
-16. Implement frontend Olahraga Tracker route and UI.
-17. Implement frontend Jurnal Harian route and UI.
-18. Implement dashboard summary cards and contribution graph UI.
-19. Add validation, empty states, error states, and basic user feedback.
-20. Run available checks and document manual verification.
-21. Update log and review files.
+1. Initialize the separated project folders and baseline backend/frontend app structure.
+2. Create backend app entry point, configuration, logger, router, and health endpoint.
+3. Create database migration structure and MVP tables for tracker records.
+4. Add sqlc configuration and queries for each MVP tracker.
+5. Create backend handlers and services for dashboard, contribution graph, and MVP modules.
+6. Add backend validation and consistent JSON response/error handling.
+7. Initialize the frontend React Router app structure.
+8. Add global layout, navigation, and shared UI primitives.
+9. Create dashboard route with summary cards and contribution graph placeholder/first version.
+10. Create routes and simple UIs for Sholat, Puasa, Keuangan, Olahraga, and Jurnal.
+11. Wire frontend route loaders/actions or API calls to backend endpoints.
+12. Add focused tests or verification notes for backend endpoints and key frontend flows.
+13. Update logs after each completed task and review notes after implementation.
 
-## Files Likely to Be Created or Changed
+## Files Likely To Be Created Or Changed
 
-Backend areas likely to be created or changed:
+Workflow files:
 
-- `cmd/app/`
-- `internal/handlers/`
-- `internal/services/`
-- `internal/middleware/`
-- `internal/db/`
-- `pkg/config/`
-- `pkg/logger/`
-- `migrations/`
-- `sql/`
+- `ai/prompts/001-personal-modular-tracker-app.prompt.md`
+- `ai/plans/001-personal-modular-tracker-app.plan.md`
+- `ai/tasks/001-personal-modular-tracker-app.tasks.md`
+- `ai/logs/001-personal-modular-tracker-app.log.md`
+- `ai/reviews/001-personal-modular-tracker-app.review.md`
 
-Frontend areas likely to be created or changed:
+Backend files:
 
-- `src/routes/`
-- `src/components/`
-- `src/features/`
-- `src/hooks/`
-- `src/lib/`
-- `src/services/`
-- `src/styles/`
-- `src/schemas/` if complex form validation is needed.
-- `src/store/` only if global/shared state is needed.
+- `backend/go.mod`
+- `backend/cmd/app/main.go`
+- `backend/internal/handlers/`
+- `backend/internal/services/`
+- `backend/internal/models/`
+- `backend/internal/middleware/`
+- `backend/internal/db/`
+- `backend/pkg/config/`
+- `backend/pkg/logger/`
+- `backend/migrations/`
+- `backend/sql/`
+- `backend/sqlc.yaml`
 
-Workflow files to update during implementation:
+Frontend files:
 
-- `/ai/tasks/001-personal-modular-tracker-app.tasks.md`
-- `/ai/logs/001-personal-modular-tracker-app.log.md`
-- `/ai/reviews/001-personal-modular-tracker-app.review.md`
+- `frontend/package.json`
+- `frontend/app/` or `frontend/src/`, depending on React Router scaffold conventions
+- `frontend/src/routes/`
+- `frontend/src/components/`
+- `frontend/src/features/`
+- `frontend/src/hooks/`
+- `frontend/src/lib/`
+- `frontend/src/services/`
+- `frontend/src/styles/`
 
-## Risks and Edge Cases
+## Risks And Edge Cases
 
-- The MVP scope can become too large if all modules are implemented with full analytics immediately.
-- Dashboard aggregation can become complex if module data models are over-generalized too early.
-- Date handling can cause inconsistent daily summaries if timezone assumptions are unclear.
-- Finance records need careful validation for amounts and transaction type.
-- Journal entries may include long text and optional media later; MVP should avoid overbuilding media support.
-- Contribution graph should work with sparse data and empty history.
-- The repository may not yet contain dependency setup, so setup tasks may need extra care before feature work begins.
+- The MVP can grow too large if all modules are implemented at full depth immediately.
+- Dashboard aggregation can become inconsistent if modules store dates or statuses differently.
+- Date handling needs clear rules for daily, weekly, monthly, and yearly summaries.
+- Finance records need validation for positive amounts, categories, and transaction type.
+- Journal entries may need length limits and safe rendering.
+- Contribution graph rules should stay simple at first so they can support multiple modules.
+- Frontend and backend folder conventions must remain separated according to the tech stack file.
+- Existing project files should be checked before implementation to avoid overwriting unrelated work.
 
 ## Dependency Proposal
 
-No new dependency is proposed at this stage.
+The MVP needs one PostgreSQL driver package so Go's `database/sql` can connect to PostgreSQL.
 
-Use only the dependencies listed in `/ai/context/tech-stack.md`. If implementation reveals a missing required dependency, propose it in the plan or log before using it.
+Proposed dependency:
+
+- `github.com/jackc/pgx/v5/stdlib`
+- `github.com/fergusstrange/embedded-postgres` for test-only database-backed verification when local PostgreSQL is unavailable
+
+Reason:
+
+- `/ai/context/tech-stack.md` requires `database/sql + PostgreSQL`, but `database/sql` needs a driver implementation at runtime.
+- The pgx stdlib package keeps application code on `database/sql` while providing the PostgreSQL driver.
+- The embedded Postgres package keeps verification close to the approved PostgreSQL stack without requiring Docker or a preinstalled local PostgreSQL service.
+
+Use the stack already listed:
+
+- Go standard library, chi, validator, slog, `database/sql`, sqlc, PostgreSQL, golang-migrate
+- React Router v7, Shadcn UI, Tailwind CSS
+- React Hook Form and Zod only if needed for complex forms
+- Zustand only if shared global state is needed
 
 ## Testing Plan
 
-- Backend:
-  - Verify health endpoint.
-  - Verify CRUD behavior for each MVP tracker module.
-  - Verify validation errors for invalid payloads.
-  - Verify dashboard summary output with empty and populated data.
-  - Verify contribution graph data with empty and populated records.
-- Frontend:
-  - Verify navigation between dashboard and MVP modules.
-  - Verify forms or checklists can submit valid data.
-  - Verify empty states, loading states, and error states.
-  - Verify dashboard cards update after tracker data changes.
-  - Verify contribution graph renders empty and populated states.
-- Database:
-  - Verify migrations apply cleanly.
-  - Verify sqlc generation succeeds.
-  - Verify basic queries return expected records.
-- Workflow:
-  - After each task, update the task checkbox and log file.
-  - After the feature is implemented, update the review file with findings and follow-up ideas.
+Backend:
+
+- Verify the health endpoint.
+- Verify CRUD endpoints for each MVP tracker.
+- Verify request validation failures.
+- Verify dashboard summary aggregation.
+- Verify contribution graph aggregation.
+- Run Go tests where test files exist.
+
+Frontend:
+
+- Verify dashboard renders summary sections.
+- Verify navigation between MVP modules.
+- Verify forms/checklists can submit data.
+- Verify histories update after create/update/delete actions.
+- Verify empty states render clearly.
+- Run frontend tests or build checks when available.
+
+Manual verification:
+
+- Create sample records for each MVP module.
+- Confirm dashboard values update.
+- Confirm contribution graph values update.
+- Confirm invalid input shows a clear error.
+
+## Assumptions
+
+- The MVP is private and single-user unless a later issue introduces authentication or multi-user support.
+- Local development can use PostgreSQL according to `/ai/context/tech-stack.md`.
+- Reminder and social diary features will be handled in future issues after the MVP tracker foundation is stable.

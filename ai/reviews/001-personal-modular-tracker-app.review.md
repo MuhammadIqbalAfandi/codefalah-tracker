@@ -1,67 +1,52 @@
 # Review: Personal Modular Tracker App
 
-## Feature
+## Status
 
-- ID: `001`
-- Name: `personal-modular-tracker-app`
-- Status: Not implemented yet.
+Verification pass completed with live database checks blocked by local environment.
 
-## Review Status
+## Review Checklist
 
-Initial review file created. No implementation has been reviewed yet.
+- [ ] Check for bugs after implementation.
+- [ ] Check security concerns after implementation.
+- [ ] Check input validation after implementation.
+- [ ] Check backend API behavior after implementation.
+- [ ] Check frontend user flows after implementation.
+- [x] Check dashboard summary accuracy after implementation.
+- [ ] Check contribution graph accuracy after implementation.
+- [ ] Check empty states and error states after implementation.
+- [ ] Check consistency with `/ai/context/tech-stack.md`.
+- [ ] Check that unrelated files were not changed.
 
-## Critical Issues
+## Initial Risk Notes
 
-- None yet. Implementation has not started.
+- Backend startup currently requires PostgreSQL to be reachable because the app pings the configured database before starting the HTTP server.
+- Sholat API behavior still needs live database testing for duplicate dates, invalid dates, missing ids, and delete behavior.
+- Puasa API behavior still needs live database testing for duplicate dates, fasting type validation, invalid dates, missing ids, and delete behavior.
+- Keuangan API behavior still needs live database testing for amount precision, transaction type validation, invalid dates, missing ids, and delete behavior.
+- Olahraga API behavior still needs live database testing for duration validation, invalid dates, missing ids, and delete behavior.
+- Jurnal API behavior still needs live database testing for content length limits, tag text handling, privacy defaults, invalid dates, missing ids, and delete behavior.
+- Dashboard summary API still needs live database testing for empty data, mixed module data, monthly finance balance, and weekly sport aggregation.
+- Contribution graph API still needs live database testing for empty ranges, date range validation, and combined module score behavior.
+- Date handling must be consistent across daily, weekly, monthly, and yearly summaries.
+- Dashboard summary values may become inaccurate if module records use inconsistent status fields.
+- Finance inputs must validate amount, category, transaction type, and date.
+- Journal content should avoid unsafe rendering and should have reasonable length handling.
+- Contribution graph rules should be simple and consistent across supported modules.
+- MVP scope should stay focused on dashboard, sholat, puasa, finance, sport, journal, and simple contribution graph support.
 
-## Bugs
+## Findings
 
-- None yet. Implementation has not started.
+- No compile or type errors were found in backend or frontend verification.
+- MVP module save forms now show visible success and failure feedback instead of failing silently in the browser console.
+- Network failures now return a clearer user-facing message from the shared frontend API client.
+- Duplicate sholat and puasa saves for the same date now return a conflict response with a specific message instead of a generic internal server error.
+- Backend verification now includes duplicate-date create tests for sholat and puasa so the save-error regression is covered.
+- Backend route tests cover health, invalid tracker create payloads, invalid ids, and invalid dashboard date parameters.
+- Frontend build and route rendering checks passed for dashboard and all MVP module routes.
+- A second verification pass on 2026-05-01 produced the same passing backend/frontend results.
+- Live PostgreSQL-backed create/list/update/delete behavior was not verified because `psql` is unavailable and Docker daemon access is denied.
+- Dashboard summary updates from stored records are now covered by a backend integration test that starts embedded PostgreSQL, applies the MVP migration, seeds module records, and asserts the summary response changes.
 
-## Security Issues
+## Follow-Up Review Timing
 
-- None yet. Implementation has not started.
-
-## Validation Notes
-
-- Input validation must be reviewed after backend handlers and frontend forms are implemented.
-- Finance amount validation should receive extra attention.
-- Date fields should be reviewed for consistent daily summary behavior.
-
-## Edge Cases To Review Later
-
-- Empty dashboard data.
-- Empty contribution graph data.
-- Multiple records on the same date where only one daily record should exist.
-- Invalid or future dates.
-- Negative or zero finance amounts.
-- Long journal entries.
-- Missing optional fields.
-- Delete behavior and related summary recalculation.
-
-## Code Duplication
-
-- Not reviewed yet.
-
-## Naming Consistency
-
-- Workflow files use `001-personal-modular-tracker-app`.
-- Module names should remain consistent with the issue notes during implementation.
-
-## Missing Tests
-
-- Not applicable yet.
-- Tests or manual verification notes should be added during implementation.
-
-## Possible Simplification
-
-- Keep MVP tracker tables and services explicit per module.
-- Avoid building a generic tracker engine until repeated behavior is proven by implementation.
-
-## Future Improvement Ideas
-
-- Add reminder and notification support after the MVP tracker modules are stable.
-- Add additional tracker modules such as Minum, Habit, Tidur, Belajar, and Target Hidup.
-- Add richer journal media support after the private diary flow is stable.
-- Add authentication if the app needs multiple users.
-- Add advanced analytics after basic summaries are reliable.
+Run a database-backed verification pass for contribution graph accuracy once PostgreSQL-backed graph assertions are added, then update the remaining unchecked task.

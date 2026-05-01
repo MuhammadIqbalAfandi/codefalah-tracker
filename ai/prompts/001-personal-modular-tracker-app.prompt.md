@@ -2,89 +2,72 @@
 
 ## Context
 
-Build the first version of a personal modular tracker app based on the issue file for feature `001-personal-modular-tracker-app`.
+Build the MVP for a Personal Modular Tracker App based on:
 
-The app should help the user record, monitor, and evaluate important personal activities across daily, weekly, monthly, and yearly periods. The core product concept is a modular tracker: each tracker is a separate module, while the dashboard provides a compact summary of progress across modules.
+- `/ai/issues/001-personal-modular-tracker-app.issue.md`
+- `/ai/context/project-rules.md`
+- `/ai/context/tech-stack.md`
 
-Follow the project rules and tech stack exactly:
+The app is a private personal tracker for recording important daily, weekly, monthly, and yearly activities. It uses a modular tracker concept where each tracker has its own module, page, input flow, history, and progress summary.
 
-- Backend: Go with `net/http`, chi, `database/sql`, sqlc, PostgreSQL, golang-migrate, slog, and go-playground/validator.
-- Frontend: React Router v7 framework mode, Shadcn UI, Tailwind CSS, React Hook Form and Zod only when needed, Zustand only when needed.
-- Keep backend and frontend clearly separated.
-- Keep the first implementation focused on the MVP.
+The MVP should focus on:
+
+- Main dashboard
+- Sholat Tracker
+- Puasa Tracker
+- Keuangan Tracker
+- Olahraga Tracker
+- Jurnal Harian
+- Simple contribution graph support
 
 ## Goal
 
-Implement the MVP foundation for the Personal Modular Tracker App.
+Implement a maintainable MVP foundation for the Personal Modular Tracker App using the approved separated full stack architecture.
 
-The MVP should provide:
-
-- A dashboard that summarizes the user's tracker progress.
-- A modular navigation structure.
-- MVP tracker modules:
-  - Sholat Tracker.
-  - Puasa Tracker.
-  - Keuangan Tracker.
-  - Olahraga Tracker.
-  - Jurnal Harian.
-  - Simple contribution graph support.
-- Basic create, read, update, and delete behavior where relevant for each tracker.
-- Simple statistics and progress summaries where useful.
+The result should let the user open the app, navigate between MVP modules, record basic tracker data, view recent history, and see simple dashboard/contribution summaries.
 
 ## Requirements
 
-- Use the same feature ID and feature name across workflow files: `001-personal-modular-tracker-app`.
-- Read existing project structure before changing files.
-- Follow existing conventions if the repository already has backend or frontend structure.
-- If the repository has no implementation structure yet, create a simple separated backend/frontend structure that matches `/ai/context/tech-stack.md`.
-- Keep modules independent where possible.
-- Do not implement non-MVP modules in the first pass.
-- Use RESTful API design for backend endpoints.
-- Keep business logic in backend services, not handlers.
-- Keep route-level data loading or actions in React Router route modules where appropriate.
-- Keep reusable UI components small and composable.
-- Use forms only as complex as needed for the tracker input.
-- Use validation for user input.
-- Store dates consistently and make daily records easy to query.
-- Provide simple summaries for dashboard cards and contribution graph data.
-- Avoid introducing new dependencies without explicit approval.
+- Use the workflow and naming rules from `/ai/context/project-rules.md`.
+- Follow the stack and folder rules from `/ai/context/tech-stack.md`.
+- Keep backend code inside `backend/`.
+- Keep frontend code inside `frontend/`.
+- Use Go with `net/http`, chi, `database/sql`, sqlc, PostgreSQL, golang-migrate, slog, and validator for the backend.
+- Use React Router v7 framework mode with Shadcn UI and Tailwind CSS for the frontend.
+- Use React Hook Form and Zod only when forms become complex enough to need them.
+- Use Zustand only if global/shared frontend state becomes necessary.
+- Keep each tracker module separated by responsibility.
+- Build the MVP incrementally in small tasks.
+- Preserve simple, readable, maintainable code.
 
 ## Constraints
 
-- Do not work outside the selected task during implementation.
-- Do not change unrelated files.
-- Do not refactor unrelated code.
-- Do not implement future modules before the MVP is stable.
-- Do not add public social features such as follow, like, comments, or public posts.
-- Do not integrate external services, wearable devices, banks, or third-party calendars.
-- Do not add reminder or notification features in the first MVP unless they are later approved as a separate enhancement.
-- Prefer simple data models over complex generalized abstractions.
+- Do not introduce frameworks, libraries, databases, or major tools outside `/ai/context/tech-stack.md` unless proposed in the plan first.
+- Do not implement non-MVP modules during the first MVP scope.
+- Do not implement public social features for the journal in the MVP.
+- Do not build advanced reminders or notifications in the MVP.
+- Do not refactor unrelated files.
+- Do not work on future tasks when running a single checklist task.
 
 ## Expected Output
 
-When implementing this feature later, produce:
+The implementation should produce:
 
-- Backend API foundation for MVP tracker data.
-- Database migrations and sqlc query definitions for MVP tracker records.
-- Frontend routes and feature modules for dashboard and MVP trackers.
-- Tracker input forms or checklists.
-- Tracker history views.
-- Basic dashboard summaries.
-- Simple contribution graph display or data structure.
-- Focused tests or manual verification notes based on project maturity.
-- Updated task checkbox and log entry after each completed task.
+- A separated backend app under `backend/`.
+- A separated frontend app under `frontend/`.
+- API routes for dashboard summaries, contribution graph data, and MVP module records.
+- Database schema and sqlc queries for MVP tracker records.
+- Frontend routes for dashboard and MVP modules.
+- Simple input, history, and summary UI for the MVP modules.
+- Updated `/ai/logs/001-personal-modular-tracker-app.log.md` after each completed task.
+- Updated `/ai/reviews/001-personal-modular-tracker-app.review.md` when review notes are discovered or after the feature is completed.
 
-## Files That Should Be Read Before Working
+## Files To Read Before Working
 
-- `/ai/context/tech-stack.md`
 - `/ai/context/project-rules.md`
+- `/ai/context/tech-stack.md`
 - `/ai/issues/001-personal-modular-tracker-app.issue.md`
-- `/ai/prompts/001-personal-modular-tracker-app.prompt.md`
 - `/ai/plans/001-personal-modular-tracker-app.plan.md`
 - `/ai/tasks/001-personal-modular-tracker-app.tasks.md`
-
-## Notes
-
-- This prompt is for implementation work after planning is accepted.
-- Implementation must start from the next unchecked task in the task file unless the user specifies a task.
-- The initial MVP should prioritize a useful tracker foundation over full feature breadth.
+- `/ai/logs/001-personal-modular-tracker-app.log.md`
+- `/ai/reviews/001-personal-modular-tracker-app.review.md`
