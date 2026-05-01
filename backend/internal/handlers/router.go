@@ -3,6 +3,8 @@ package handlers
 import (
 	"log/slog"
 	"net/http"
+	"os"
+	"strings"
 	"time"
 
 	trackerdb "codefalah-tracker/backend/internal/db"
@@ -75,18 +77,54 @@ func NewRouter(logger *slog.Logger, queries *trackerdb.Queries) http.Handler {
 }
 
 func corsMiddleware(next http.Handler) http.Handler {
+	allowedOrigins := allowedOriginsFromEnv()
+
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type,Authorization")
+		w.Header().Set("Vary", "Origin")
+
+		origin := r.Header.Get("Origin")
+		if origin != "" && allowedOrigins[origin] {
+			w.Header().Set("Access-Control-Allow-Origin", origin)
+		}
 
 		if r.Method == http.MethodOptions {
+			if origin != "" && !allowedOrigins[origin] {
+				w.WriteHeader(http.StatusForbidden)
+				return
+			}
+
 			w.WriteHeader(http.StatusNoContent)
 			return
 		}
 
 		next.ServeHTTP(w, r)
 	})
+}
+
+func allowedOriginsFromEnv() map[string]bool {
+	rawOrigins := os.Getenv("CORS_ALLOWED_ORIGINS")
+	if strings.TrimSpace(rawOrigins) == "" {
+		rawOrigins = strings.Join([]string{
+			"http://localhost:3000",
+			"http://127.0.0.1:3000",
+			"http://localhost:5173",
+			"http://127.0.0.1:5173",
+		}, ",")
+	}
+
+	allowedOrigins := make(map[string]bool)
+	for _, origin := range strings.Split(rawOrigins, ",") {
+		trimmedOrigin := strings.TrimSpace(origin)
+		if trimmedOrigin == "" {
+			continue
+		}
+
+		allowedOrigins[trimmedOrigin] = true
+	}
+
+	return allowedOrigins
 }
 
 func (h *RouterHandlers) health(w http.ResponseWriter, r *http.Request) {

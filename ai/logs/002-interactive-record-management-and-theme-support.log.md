@@ -1,0 +1,237 @@
+# Log: Interactive Record Management and Theme Support
+
+## Status
+
+Implementation completed. Verification and workflow updates completed.
+
+## Entries
+
+### 2026-05-01
+
+- Completed task: Fixed follow-up review findings.
+- Changed files:
+  - `backend/internal/handlers/router.go`
+  - `frontend/app/lib/form-defaults.ts`
+  - `frontend/app/lib/tracker-sync.ts`
+  - `frontend/app/routes/dashboard.tsx`
+  - `frontend/app/routes/sholat.tsx`
+  - `frontend/app/routes/puasa.tsx`
+  - `frontend/app/routes/keuangan.tsx`
+  - `frontend/app/routes/olahraga.tsx`
+  - `frontend/app/routes/jurnal.tsx`
+  - `frontend/app/routes/sholat-detail.tsx`
+  - `frontend/app/routes/puasa-detail.tsx`
+  - `frontend/app/routes/keuangan-detail.tsx`
+  - `frontend/app/routes/olahraga-detail.tsx`
+  - `frontend/app/routes/jurnal-detail.tsx`
+  - `ai/reviews/002-interactive-record-management-and-theme-support.review.md`
+  - `ai/logs/002-interactive-record-management-and-theme-support.log.md`
+- Summary of changes:
+  - Restricted backend CORS behavior from wildcard access to an allowlist-based policy with sensible local frontend defaults and env override support.
+  - Replaced UTC-based date defaults in the shared frontend helper and dashboard empty-state fallback with a local-date formatter.
+  - Added a shared tracker-data change notification utility and wired create, edit, and delete success flows to emit it so the dashboard can revalidate when active.
+  - Updated the review file to reflect that the previously open follow-up findings have been addressed.
+- Notes:
+  - The dashboard refresh improvement is event-driven on the frontend and does not require backend polling.
+  - The new CORS policy still assumes local development origins by default unless `CORS_ALLOWED_ORIGINS` is provided.
+- Known issues:
+  - No browser automation or manual click-through verification was run for this follow-up pass.
+- Verification:
+  - `cd backend && go test ./...`
+  - `cd frontend && npm run typecheck`
+- Next suggested task:
+  - No immediate follow-up is required unless you want to add browser-level tests or authentication.
+
+- Completed task: Verification and workflow updates.
+- Changed files:
+  - `ai/tasks/002-interactive-record-management-and-theme-support.tasks.md`
+  - `ai/reviews/002-interactive-record-management-and-theme-support.review.md`
+  - `ai/logs/002-interactive-record-management-and-theme-support.log.md`
+- Summary of changes:
+  - Ran the backend test suite and confirmed the handler package still passes after the enhancement work.
+  - Re-ran frontend typecheck and used source-level verification to review history loaders, detail routes, edit flows, delete confirmation flows, and theme persistence wiring.
+  - Completed the verification checklist in the task file.
+  - Finalized the review file with remaining findings covering open CORS exposure, UTC-based date defaults, and partial cross-route summary refresh behavior.
+- Notes:
+  - This verification pass did not include browser automation or a manual click-through session.
+  - The review now reflects both what was verified successfully and what still needs follow-up work.
+- Known issues:
+  - `backend/internal/handlers/router.go` still allows permissive cross-origin API access.
+  - `frontend/app/lib/form-defaults.ts` and the dashboard empty summary fallback still use UTC-based date defaults.
+  - Dashboard summaries do not actively refresh immediately after detail-page edits unless the dashboard route reruns its loader.
+- Verification:
+  - `cd backend && go test ./...`
+  - `cd frontend && npm run typecheck`
+- Next suggested task:
+  - No unchecked tasks remain in `ai/tasks/002-interactive-record-management-and-theme-support.tasks.md`; continue with follow-up fixes from the review or open a new issue.
+
+- Completed task: Theme support.
+- Changed files:
+  - `frontend/app/components/theme-toggle.tsx`
+  - `frontend/app/components/main-layout.tsx`
+  - `frontend/app/root.tsx`
+  - `frontend/app/app.css`
+  - `ai/tasks/002-interactive-record-management-and-theme-support.tasks.md`
+  - `ai/logs/002-interactive-record-management-and-theme-support.log.md`
+- Summary of changes:
+  - Added global theme handling in the frontend shell through a bootstrap script plus a reusable theme toggle component.
+  - Added a visible light and dark mode toggle to the shared main layout so it is available across dashboard and module routes.
+  - Persisted the selected theme in local storage and restored it on load before the app renders.
+  - Adjusted global CSS so `color-scheme` follows the selected theme instead of always following system preference.
+- Notes:
+  - Theme persistence in this step is client-side only and does not require backend storage.
+  - Verification for this section is source-level plus frontend typecheck; no browser-driven visual walkthrough was run in this turn.
+- Known issues:
+  - The app now supports manual light and dark theme switching, but no route-by-route screenshot verification was performed here.
+- Verification:
+  - `cd frontend && npm run typecheck`
+- Next suggested task:
+  - Verify backend detail, update, and delete behavior for supported MVP modules.
+
+- Completed task: Delete flows.
+- Changed files:
+  - `frontend/app/components/delete-confirmation.tsx`
+  - `frontend/app/routes/sholat-detail.tsx`
+  - `frontend/app/routes/puasa-detail.tsx`
+  - `frontend/app/routes/keuangan-detail.tsx`
+  - `frontend/app/routes/olahraga-detail.tsx`
+  - `frontend/app/routes/jurnal-detail.tsx`
+  - `ai/tasks/002-interactive-record-management-and-theme-support.tasks.md`
+  - `ai/logs/002-interactive-record-management-and-theme-support.log.md`
+- Summary of changes:
+  - Added a reusable inline delete confirmation component for destructive actions on saved records.
+  - Added delete actions to the Sholat, Puasa, Keuangan, Olahraga, and Jurnal detail pages using the existing backend delete endpoints.
+  - Redirected back to each module route after successful deletion so the module loader refreshes and the history view reflects the removed record.
+  - Preserved inline error feedback on the detail pages when delete requests fail.
+- Notes:
+  - Delete confirmation is intentionally simple and route-local in this step, without introducing a modal dependency.
+  - Redirecting back to the parent module route is what refreshes history after delete.
+- Known issues:
+  - Dashboard-level summaries are not actively refreshed from detail pages in this step; they will reflect changes the next time the dashboard loader runs.
+- Verification:
+  - `cd frontend && npm run typecheck`
+- Next suggested task:
+  - Add global light and dark theme state handling in the frontend shell.
+
+- Completed task: Frontend detail and edit flows.
+- Changed files:
+  - `frontend/app/routes.ts`
+  - `frontend/app/routes/sholat.tsx`
+  - `frontend/app/routes/puasa.tsx`
+  - `frontend/app/routes/keuangan.tsx`
+  - `frontend/app/routes/olahraga.tsx`
+  - `frontend/app/routes/jurnal.tsx`
+  - `frontend/app/routes/sholat-detail.tsx`
+  - `frontend/app/routes/puasa-detail.tsx`
+  - `frontend/app/routes/keuangan-detail.tsx`
+  - `frontend/app/routes/olahraga-detail.tsx`
+  - `frontend/app/routes/jurnal-detail.tsx`
+  - `ai/tasks/002-interactive-record-management-and-theme-support.tasks.md`
+  - `ai/logs/002-interactive-record-management-and-theme-support.log.md`
+- Summary of changes:
+  - Added dedicated detail routes for Sholat, Puasa, Keuangan, Olahraga, and Jurnal records using the existing backend get-by-id endpoints.
+  - Connected module history items to their new detail pages so saved records can now be opened from each module view.
+  - Added edit forms on each detail page and wired them to the existing backend update endpoints.
+  - Revalidated detail loaders after successful edits so the updated record stays in sync on the page.
+- Notes:
+  - This step intentionally stops before delete support, which remains in the next workflow section.
+  - Sholat detail keeps the stored date read-only because the current backend update flow does not change `record_date`.
+- Known issues:
+  - The module list pages do not yet automatically refresh after editing a record from a detail page unless the user revisits or reloads the module route.
+- Verification:
+  - `cd frontend && npm run typecheck`
+- Next suggested task:
+  - Add reusable delete confirmation UI or flow.
+
+- Completed task: Frontend history views.
+- Changed files:
+  - `frontend/app/routes/sholat.tsx`
+  - `frontend/app/routes/puasa.tsx`
+  - `frontend/app/routes/keuangan.tsx`
+  - `frontend/app/routes/olahraga.tsx`
+  - `frontend/app/routes/jurnal.tsx`
+  - `ai/tasks/002-interactive-record-management-and-theme-support.tasks.md`
+  - `ai/logs/002-interactive-record-management-and-theme-support.log.md`
+- Summary of changes:
+  - Replaced the static placeholder history arrays in Sholat, Puasa, Keuangan, Olahraga, and Jurnal routes with backend-backed loaders that read from the existing list endpoints.
+  - Added route-level fallback messaging when backend history data is unavailable so the pages fail softly instead of looking silently empty.
+  - Added consistent empty-state UI for all five module history sections when no records exist yet.
+  - Revalidated each route loader after successful create submissions so newly saved records can appear back in history without waiting for a manual refresh.
+- Notes:
+  - The module forms still use local submit handlers in this step; dedicated detail, edit, and delete flows remain for the next sections.
+  - The route loaders currently fetch a limited recent history set from each backend list endpoint.
+- Known issues:
+  - The dashboard route still uses the UTC-based fallback date helper noted in earlier review findings and has not been adjusted in this step.
+- Verification:
+  - `cd frontend && npm run typecheck`
+- Next suggested task:
+  - Create Sholat detail route or detail view.
+
+- Completed task: Backend support.
+- Changed files:
+  - `backend/internal/handlers/response.go`
+  - `backend/internal/handlers/sholat.go`
+  - `backend/internal/handlers/puasa.go`
+  - `backend/internal/handlers/finance.go`
+  - `backend/internal/handlers/sport.go`
+  - `backend/internal/handlers/journal.go`
+  - `backend/internal/handlers/router_test.go`
+  - `backend/internal/handlers/dashboard_integration_test.go`
+  - `ai/tasks/002-interactive-record-management-and-theme-support.tasks.md`
+  - `ai/logs/002-interactive-record-management-and-theme-support.log.md`
+- Summary of changes:
+  - Verified that all five MVP modules already expose backend detail, update, and delete endpoints through the existing chi router.
+  - Improved validation error responses so failed requests now return field-specific messages such as missing required JSON fields instead of a generic validation error.
+  - Tightened delete behavior for sholat, puasa, keuangan, olahraga, and jurnal so deleting a missing record now returns `404` instead of falling through as a generic backend delete path.
+  - Added focused backend tests for field-specific validation errors and missing-record delete behavior.
+- Notes:
+  - No frontend code was changed in this step.
+  - Route registration for `/api/sholat-records`, `/api/puasa-records`, `/api/finance-transactions`, `/api/sport-records`, and `/api/journal-entries` remains unchanged and continues to provide full CRUD coverage for this enhancement.
+- Known issues:
+  - The current backend still allows permissive `Access-Control-Allow-Origin: *`, which remains a privacy concern noted in the `001` review and is outside the scope of this section.
+- Verification:
+  - `cd backend && go test ./...`
+- Next suggested task:
+  - Replace placeholder Sholat history with backend-backed data.
+
+- Completed task: Discovery and shared preparation.
+- Changed files:
+  - `ai/tasks/002-interactive-record-management-and-theme-support.tasks.md`
+  - `ai/logs/002-interactive-record-management-and-theme-support.log.md`
+- Summary of changes:
+  - Reviewed the key follow-up findings from feature `001`, especially the placeholder history gap, generic validation feedback, repeated submit logic, privacy concerns, and local-date correctness risk.
+  - Confirmed that the frontend MVP module routes for sholat, puasa, keuangan, olahraga, and jurnal still render static local history arrays instead of backend-loaded records.
+  - Confirmed that the backend already exposes list, get-by-id, update, and delete routes for all five MVP modules, so the enhancement should reuse existing CRUD endpoints rather than duplicate them.
+  - Confirmed reusable frontend building blocks already exist for API requests, save feedback messaging, and default date values, while theme state, detail flows, delete confirmation UI, and backend-backed history loaders still need implementation.
+  - Refined the backend task wording so the next phase focuses on verifying and adjusting existing endpoints instead of assuming missing CRUD support.
+- Notes:
+  - No application code was written.
+  - The current frontend scaffold uses `frontend/app/` route files with local submit handlers and static history content.
+  - The current backend router mounts full CRUD resource routes for `/api/sholat-records`, `/api/puasa-records`, `/api/finance-transactions`, `/api/sport-records`, and `/api/journal-entries`.
+- Known issues:
+  - Module history remains placeholder-only in the UI until the frontend history tasks are implemented.
+  - `frontend/app/lib/form-defaults.ts` still uses a UTC-based date helper and should be treated as a follow-up risk for date-sensitive modules.
+- Next suggested task:
+  - Verify and adjust record detail API support for Sholat Tracker if frontend detail flow needs changes.
+
+- Completed task: Prepared feature workflow files.
+- Changed files:
+  - `ai/prompts/002-interactive-record-management-and-theme-support.prompt.md`
+  - `ai/plans/002-interactive-record-management-and-theme-support.plan.md`
+  - `ai/tasks/002-interactive-record-management-and-theme-support.tasks.md`
+  - `ai/logs/002-interactive-record-management-and-theme-support.log.md`
+  - `ai/reviews/002-interactive-record-management-and-theme-support.review.md`
+- Summary of changes:
+  - Converted the issue into a refined implementation prompt.
+  - Created the implementation plan for record lifecycle completion and theme support.
+  - Broke the enhancement into small actionable checklist tasks.
+  - Initialized the implementation log.
+  - Initialized the review file.
+- Notes:
+  - No application code was written.
+  - This enhancement is a direct follow-up to `001-personal-modular-tracker-app`.
+  - The workflow assumes implementation should reuse the current `backend/` and `frontend/` structure already present in the repo.
+- Known issues:
+  - None yet. Implementation has not started.
+- Next suggested task:
+  - Review feature `001` review findings that directly affect this enhancement.

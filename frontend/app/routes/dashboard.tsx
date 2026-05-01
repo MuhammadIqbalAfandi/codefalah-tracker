@@ -6,11 +6,14 @@ import {
   Moon,
   WalletCards,
 } from "lucide-react";
-import { useLoaderData } from "react-router";
+import { useEffect } from "react";
+import { useLoaderData, useRevalidator } from "react-router";
 
 import type { Route } from "./+types/dashboard";
 import { ContributionGraph } from "~/components/contribution-graph";
 import { EmptyState } from "~/components/empty-state";
+import { formatLocalDateInputValue } from "~/lib/form-defaults";
+import { subscribeToTrackerDataChanges } from "~/lib/tracker-sync";
 import { MainLayout } from "~/components/main-layout";
 import { SummaryCard } from "~/components/summary-card";
 import { apiRequest } from "~/services/api-client";
@@ -65,7 +68,7 @@ type DashboardLoaderData = {
 };
 
 const emptySummary: DashboardSummary = {
-  date: new Date().toISOString().slice(0, 10),
+  date: formatLocalDateInputValue(new Date()),
   sholat: {
     completed_count: 0,
     total_count: 5,
@@ -120,6 +123,14 @@ export async function loader(): Promise<DashboardLoaderData> {
 
 export default function DashboardRoute() {
   const { summary, contribution, apiError } = useLoaderData<typeof loader>();
+  const revalidator = useRevalidator();
+
+  useEffect(() => {
+    return subscribeToTrackerDataChanges(() => {
+      revalidator.revalidate();
+    });
+  }, [revalidator]);
+
   const sholatValue = `${summary.sholat.completed_count}/${summary.sholat.total_count}`;
   const puasaValue = summary.puasa.fast_type
     ? summary.puasa.completed

@@ -1,12 +1,32 @@
-import { useState, type FormEvent } from "react";
 import { Moon, Save } from "lucide-react";
+import { useState, type FormEvent } from "react";
+import { Link, useLoaderData, useRevalidator } from "react-router";
 
 import type { Route } from "./+types/puasa";
+import { EmptyState } from "~/components/empty-state";
 import { MainLayout } from "~/components/main-layout";
 import { SaveFeedback } from "~/components/save-feedback";
 import { Button } from "~/components/ui/button";
 import { getTodayDateInputValue } from "~/lib/form-defaults";
+import { notifyTrackerDataChanged } from "~/lib/tracker-sync";
 import { apiRequest } from "~/services/api-client";
+
+type PuasaRecord = {
+  id: number;
+  record_date: string;
+  fast_type: string;
+  completed: boolean;
+  sahur: boolean;
+  iftar: boolean;
+  notes: string;
+};
+
+type LoaderData = {
+  history: PuasaRecord[];
+  apiError?: string;
+};
+
+const historyLimit = 10;
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -15,13 +35,25 @@ export function meta({}: Route.MetaArgs) {
   ];
 }
 
-const history = [
-  { date: "2026-05-01", type: "Senin Kamis", status: "Selesai" },
-  { date: "2026-04-29", type: "Ayyamul Bidh", status: "Selesai" },
-  { date: "2026-04-22", type: "Sunnah", status: "Belum selesai" },
-];
+export async function loader(): Promise<LoaderData> {
+  try {
+    return {
+      history: await apiRequest<PuasaRecord[]>(
+        `/api/puasa-records?limit=${historyLimit}`,
+      ),
+    };
+  } catch {
+    return {
+      history: [],
+      apiError:
+        "Riwayat puasa belum tersedia dari backend. Data baru akan muncul setelah koneksi backend siap.",
+    };
+  }
+}
 
 export default function PuasaRoute() {
+  const { history, apiError } = useLoaderData<typeof loader>();
+  const revalidator = useRevalidator();
   const [saveState, setSaveState] = useState<{
     tone: "success" | "error";
     message: string;
@@ -53,6 +85,8 @@ export default function PuasaRoute() {
         tone: "success",
         message: "Catatan puasa berhasil disimpan.",
       });
+      notifyTrackerDataChanged();
+      revalidator.revalidate();
     } catch (error) {
       console.error("Failed to save puasa record", error);
       setSaveState({
@@ -68,6 +102,12 @@ export default function PuasaRoute() {
       title="Puasa Tracker"
       description="Catatan jenis puasa, sahur, berbuka, dan status harian."
     >
+      {apiError ? (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-200">
+          {apiError}
+        </div>
+      ) : null}
+
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
         <section className="rounded-lg border border-border bg-card p-4 shadow-sm">
           <div className="flex items-center gap-2">
@@ -133,23 +173,45 @@ export default function PuasaRoute() {
         <section className="rounded-lg border border-border bg-card p-4 shadow-sm">
           <h2 className="text-base font-semibold text-foreground">Riwayat</h2>
           <div className="mt-4 grid gap-3">
-            {history.map((item) => (
-              <article
-                key={`${item.date}-${item.type}`}
-                className="rounded-md border border-border p-3"
-              >
-                <p className="text-sm font-medium text-foreground">
-                  {item.type}
-                </p>
-                <div className="mt-2 flex items-center justify-between gap-3 text-sm text-muted-foreground">
-                  <span>{item.date}</span>
-                  <span>{item.status}</span>
-                </div>
-              </article>
-            ))}
+            {history.length === 0 ? (
+              <EmptyState
+                icon={Moon}
+                title="Belum ada riwayat puasa"
+                description="Catatan puasa yang berhasil tersimpan akan muncul di sini."
+              />
+            ) : (
+              history.map((item) => (
+                <article key={item.id} className="rounded-md border border-border p-3">
+                  <Link
+                    to={`/puasa/${item.id}`}
+                    className="text-sm font-medium text-foreground underline-offset-4 hover:underline"
+                  >
+                    {item.fast_type}
+                  </Link>
+                  <div className="mt-2 flex items-center justify-between gap-3 text-sm text-muted-foreground">
+                    <span>{formatRecordDate(item.record_date)}</span>
+                    <span>{item.completed ? "Selesai" : "Belum selesai"}</span>
+                  </div>
+                  <Link
+                    to={`/puasa/${item.id}`}
+                    className="mt-3 inline-flex text-xs font-medium text-sky-700 underline-offset-4 hover:underline dark:text-sky-300"
+                  >
+                    Lihat detail
+                  </Link>
+                </article>
+              ))
+            )}
           </div>
         </section>
       </div>
     </MainLayout>
   );
+}
+
+function formatRecordDate(value: string) {
+  return new Intl.DateTimeFormat("id-ID", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  }).format(new Date(value));
 }

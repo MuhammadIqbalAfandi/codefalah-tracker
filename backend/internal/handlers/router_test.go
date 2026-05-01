@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"io"
 	"log/slog"
 	"net/http"
@@ -91,5 +92,28 @@ func TestDashboardEndpointsRejectInvalidDates(t *testing.T) {
 				t.Fatalf("expected status %d, got %d", http.StatusBadRequest, response.Code)
 			}
 		})
+	}
+}
+
+func TestTrackerCreateEndpointsReturnFieldSpecificValidationErrors(t *testing.T) {
+	router := NewRouter(slog.New(slog.NewTextHandler(io.Discard, nil)), trackerdb.New(nil))
+
+	request := httptest.NewRequest(http.MethodPost, "/api/puasa-records", strings.NewReader(`{"record_date":"2026-05-01"}`))
+	request.Header.Set("Content-Type", "application/json")
+	response := httptest.NewRecorder()
+
+	router.ServeHTTP(response, request)
+
+	if response.Code != http.StatusBadRequest {
+		t.Fatalf("expected status %d, got %d", http.StatusBadRequest, response.Code)
+	}
+
+	var payload errorResponse
+	if err := json.NewDecoder(response.Body).Decode(&payload); err != nil {
+		t.Fatalf("decode error response: %v", err)
+	}
+
+	if payload.Error != "fast_type is required" {
+		t.Fatalf("expected field-specific validation message, got %q", payload.Error)
 	}
 }

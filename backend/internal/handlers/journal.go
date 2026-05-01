@@ -114,6 +114,11 @@ func (h *RouterHandlers) deleteJournalEntry(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
+	if _, err := h.queries.GetJournalEntryByID(r.Context(), id); err != nil {
+		writeQueryError(w, err, "journal entry not found", "failed to get journal entry")
+		return
+	}
+
 	if err := h.queries.DeleteJournalEntry(r.Context(), id); err != nil {
 		writeError(w, http.StatusInternalServerError, "failed to delete journal entry")
 		return

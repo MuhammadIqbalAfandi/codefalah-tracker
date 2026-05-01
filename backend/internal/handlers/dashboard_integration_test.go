@@ -126,6 +126,34 @@ func TestCreatePuasaRecordDuplicateDateReturnsConflict(t *testing.T) {
 	}
 }
 
+func TestDeleteEndpointsReturnNotFoundForMissingRecords(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	database := openEmbeddedDatabase(t, ctx)
+	router := NewRouter(slog.New(slog.NewTextHandler(io.Discard, nil)), trackerdb.New(database))
+	endpoints := []string{
+		"/api/sholat-records/9999",
+		"/api/puasa-records/9999",
+		"/api/finance-transactions/9999",
+		"/api/sport-records/9999",
+		"/api/journal-entries/9999",
+	}
+
+	for _, endpoint := range endpoints {
+		t.Run(endpoint, func(t *testing.T) {
+			request := httptest.NewRequest(http.MethodDelete, endpoint, nil)
+			response := httptest.NewRecorder()
+
+			router.ServeHTTP(response, request)
+
+			if response.Code != http.StatusNotFound {
+				t.Fatalf("expected delete status %d, got %d with body %s", http.StatusNotFound, response.Code, response.Body.String())
+			}
+		})
+	}
+}
+
 func openEmbeddedDatabase(t *testing.T, ctx context.Context) *sql.DB {
 	t.Helper()
 

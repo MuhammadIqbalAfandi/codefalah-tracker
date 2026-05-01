@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { NavLink } from "react-router";
 
+import { ThemeToggle } from "~/components/theme-toggle";
 import { navigationItems } from "~/lib/navigation";
 import { cn } from "~/lib/utils";
 
@@ -56,7 +57,10 @@ export function MainLayout({
                 {description}
               </p>
             </div>
-            {actions}
+            <div className="flex flex-wrap items-center gap-3">
+              <ThemeToggle />
+              {actions}
+            </div>
           </header>
           {children}
         </div>

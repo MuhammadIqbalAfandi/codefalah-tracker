@@ -111,6 +111,11 @@ func (h *RouterHandlers) deleteSportRecord(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
+	if _, err := h.queries.GetSportRecordByID(r.Context(), id); err != nil {
+		writeQueryError(w, err, "sport record not found", "failed to get sport record")
+		return
+	}
+
 	if err := h.queries.DeleteSportRecord(r.Context(), id); err != nil {
 		writeError(w, http.StatusInternalServerError, "failed to delete sport record")
 		return

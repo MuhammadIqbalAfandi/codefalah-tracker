@@ -1,12 +1,35 @@
 import { Check, Landmark } from "lucide-react";
 import { useState, type FormEvent } from "react";
+import { Link, useLoaderData, useRevalidator } from "react-router";
 
 import type { Route } from "./+types/sholat";
+import { EmptyState } from "~/components/empty-state";
 import { MainLayout } from "~/components/main-layout";
 import { SaveFeedback } from "~/components/save-feedback";
 import { Button } from "~/components/ui/button";
 import { getTodayDateInputValue } from "~/lib/form-defaults";
+import { notifyTrackerDataChanged } from "~/lib/tracker-sync";
 import { apiRequest } from "~/services/api-client";
+
+type SholatRecord = {
+  id: number;
+  record_date: string;
+  subuh: boolean;
+  dzuhur: boolean;
+  ashar: boolean;
+  maghrib: boolean;
+  isya: boolean;
+  congregation_count: number;
+  notes: string;
+};
+
+type LoaderData = {
+  history: SholatRecord[];
+  apiError?: string;
+};
+
+const prayers = ["Subuh", "Dzuhur", "Ashar", "Maghrib", "Isya"];
+const historyLimit = 10;
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -15,15 +38,25 @@ export function meta({}: Route.MetaArgs) {
   ];
 }
 
-const prayers = ["Subuh", "Dzuhur", "Ashar", "Maghrib", "Isya"];
-
-const history = [
-  { date: "2026-05-01", completed: "4/5", congregation: 2 },
-  { date: "2026-04-30", completed: "5/5", congregation: 3 },
-  { date: "2026-04-29", completed: "3/5", congregation: 1 },
-];
+export async function loader(): Promise<LoaderData> {
+  try {
+    return {
+      history: await apiRequest<SholatRecord[]>(
+        `/api/sholat-records?limit=${historyLimit}`,
+      ),
+    };
+  } catch {
+    return {
+      history: [],
+      apiError:
+        "Riwayat sholat belum tersedia dari backend. Data baru tetap bisa dicoba simpan selama backend siap.",
+    };
+  }
+}
 
 export default function SholatRoute() {
+  const { history, apiError } = useLoaderData<typeof loader>();
+  const revalidator = useRevalidator();
   const [saveState, setSaveState] = useState<{
     tone: "success" | "error";
     message: string;
@@ -60,6 +93,8 @@ export default function SholatRoute() {
         tone: "success",
         message: "Catatan sholat berhasil disimpan.",
       });
+      notifyTrackerDataChanged();
+      revalidator.revalidate();
     } catch (error) {
       console.error("Failed to save sholat record", error);
       setSaveState({
@@ -75,6 +110,12 @@ export default function SholatRoute() {
       title="Sholat Tracker"
       description="Catatan sholat harian, berjamaah, dan catatan singkat."
     >
+      {apiError ? (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-200">
+          {apiError}
+        </div>
+      ) : null}
+
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
         <section className="rounded-lg border border-border bg-card p-4 shadow-sm">
           <div className="flex items-center gap-2">
@@ -137,27 +178,59 @@ export default function SholatRoute() {
         <section className="rounded-lg border border-border bg-card p-4 shadow-sm">
           <h2 className="text-base font-semibold text-foreground">Riwayat</h2>
           <div className="mt-4 grid gap-3">
-            {history.map((item) => (
-              <article
-                key={item.date}
-                className="rounded-md border border-border p-3"
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <p className="text-sm font-medium text-foreground">
-                    {item.date}
+            {history.length === 0 ? (
+              <EmptyState
+                icon={Landmark}
+                title="Belum ada riwayat sholat"
+                description="Catatan sholat yang berhasil tersimpan akan muncul di sini."
+              />
+            ) : (
+              history.map((item) => (
+                <article key={item.id} className="rounded-md border border-border p-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <Link
+                      to={`/sholat/${item.id}`}
+                      className="text-sm font-medium text-foreground underline-offset-4 hover:underline"
+                    >
+                      {formatRecordDate(item.record_date)}
+                    </Link>
+                    <span className="rounded-md bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
+                      {countCompletedPrayers(item)}/5
+                    </span>
+                  </div>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    Berjamaah {item.congregation_count} kali
                   </p>
-                  <span className="rounded-md bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-700">
-                    {item.completed}
-                  </span>
-                </div>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  Berjamaah {item.congregation} kali
-                </p>
-              </article>
-            ))}
+                  <Link
+                    to={`/sholat/${item.id}`}
+                    className="mt-3 inline-flex text-xs font-medium text-emerald-700 underline-offset-4 hover:underline dark:text-emerald-300"
+                  >
+                    Lihat detail
+                  </Link>
+                </article>
+              ))
+            )}
           </div>
         </section>
       </div>
     </MainLayout>
   );
+}
+
+function countCompletedPrayers(record: SholatRecord) {
+  return [
+    record.subuh,
+    record.dzuhur,
+    record.ashar,
+    record.maghrib,
+    record.isya,
+  ].filter(Boolean).length;
+}
+
+function formatRecordDate(value: string) {
+  return new Intl.DateTimeFormat("id-ID", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  }).format(new Date(value));
 }

@@ -123,6 +123,11 @@ func (h *RouterHandlers) deleteFinanceTransaction(w http.ResponseWriter, r *http
 		return
 	}
 
+	if _, err := h.queries.GetFinanceTransactionByID(r.Context(), id); err != nil {
+		writeQueryError(w, err, "finance transaction not found", "failed to get finance transaction")
+		return
+	}
+
 	if err := h.queries.DeleteFinanceTransaction(r.Context(), id); err != nil {
 		writeError(w, http.StatusInternalServerError, "failed to delete finance transaction")
 		return

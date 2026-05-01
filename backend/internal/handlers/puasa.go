@@ -126,6 +126,11 @@ func (h *RouterHandlers) deletePuasaRecord(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
+	if _, err := h.queries.GetPuasaRecordByID(r.Context(), id); err != nil {
+		writeQueryError(w, err, "puasa record not found", "failed to get puasa record")
+		return
+	}
+
 	if err := h.queries.DeletePuasaRecord(r.Context(), id); err != nil {
 		writeError(w, http.StatusInternalServerError, "failed to delete puasa record")
 		return

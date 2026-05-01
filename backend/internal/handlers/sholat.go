@@ -138,6 +138,11 @@ func (h *RouterHandlers) deleteSholatRecord(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
+	if _, err := h.queries.GetSholatRecordByID(r.Context(), id); err != nil {
+		writeQueryError(w, err, "sholat record not found", "failed to get sholat record")
+		return
+	}
+
 	if err := h.queries.DeleteSholatRecord(r.Context(), id); err != nil {
 		writeError(w, http.StatusInternalServerError, "failed to delete sholat record")
 		return
@@ -153,7 +158,7 @@ func decodeAndValidate(w http.ResponseWriter, r *http.Request, payload any) bool
 	}
 
 	if err := validateRequest(payload); err != nil {
-		writeError(w, http.StatusBadRequest, "request validation failed")
+		writeValidationError(w, err, payload)
 		return false
 	}
 
