@@ -1,0 +1,338 @@
+# Log: Dashboard and Sidebar Clarity Improvements
+
+## Status
+
+Implementation completed. Verification and workflow updates completed.
+
+## Entries
+
+### 2026-05-02
+
+- Completed task: Moved the mobile sidebar open control into the page header after overlap feedback.
+- Changed files:
+  - `frontend/app/components/main-layout.tsx`
+  - `ai/logs/003-dashboard-and-sidebar-clarity-improvements.log.md`
+  - `ai/reviews/003-dashboard-and-sidebar-clarity-improvements.review.md`
+- Summary of changes:
+  - Removed the mobile sidebar open button from the fixed top-left position that overlapped the page title.
+  - Repositioned the mobile open control into the same row as the page title inside the content header so it stays accessible without covering dashboard text.
+  - Re-verified the frontend layout with `cd frontend && npm run typecheck`.
+- Notes:
+  - The desktop compact sidebar rail behavior remains unchanged in this pass.
+  - This adjustment only affects the mobile placement of the open control.
+- Known issues:
+  - No browser-driven verification was run after this placement fix.
+- Next suggested task:
+  - If needed, do a quick mobile visual pass to confirm spacing between the icon, title, and description feels comfortable.
+
+- Completed task: Refined closed-sidebar behavior and restored accessible mobile open control after additional user feedback.
+- Changed files:
+  - `frontend/app/components/main-layout.tsx`
+  - `ai/logs/003-dashboard-and-sidebar-clarity-improvements.log.md`
+  - `ai/reviews/003-dashboard-and-sidebar-clarity-improvements.review.md`
+- Summary of changes:
+  - Updated the desktop sidebar so the closed state now keeps a narrow left rail with only the toggle icon visible while hiding the brand text and navigation list.
+  - Adjusted main content spacing so the layout still accounts for the narrow closed rail on desktop.
+  - Restored a dedicated mobile open button when the sidebar drawer is closed so the menu remains reachable on smaller screens.
+  - Re-verified the frontend layout with `cd frontend && npm run typecheck`.
+- Notes:
+  - The desktop closed state now behaves closer to a collapsible sidebar than a fully disappearing panel.
+  - The mobile drawer continues to use the same book-icon control language while remaining accessible when closed.
+- Known issues:
+  - No browser-driven verification was run after this refinement.
+- Next suggested task:
+  - If needed, do a real-device or browser pass to fine-tune spacing and hit area for the compact sidebar toggle.
+
+- Completed task: Refined sidebar control into a single icon toggle after additional user feedback.
+- Changed files:
+  - `frontend/app/components/main-layout.tsx`
+  - `ai/logs/003-dashboard-and-sidebar-clarity-improvements.log.md`
+  - `ai/reviews/003-dashboard-and-sidebar-clarity-improvements.review.md`
+- Summary of changes:
+  - Simplified the sidebar interaction so each active layout now uses a single book-icon toggle for both opening and closing the sidebar.
+  - Removed the extra close button from inside the sidebar panels so the interaction no longer duplicates controls.
+  - Re-verified the updated frontend layout with `cd frontend && npm run typecheck`.
+- Notes:
+  - The toggle now switches between `BookOpen` and `BookText` based on the current sidebar state.
+  - This follow-up keeps the control visually minimal while still preserving explicit open and close behavior.
+- Known issues:
+  - No browser-driven verification was run after this refinement.
+- Next suggested task:
+  - If needed, do a visual pass to confirm the single-icon sidebar control feels balanced on mobile and desktop.
+
+- Completed task: Follow-up fix for explicit sidebar open and close controls after user validation.
+- Changed files:
+  - `frontend/app/components/main-layout.tsx`
+  - `ai/logs/003-dashboard-and-sidebar-clarity-improvements.log.md`
+  - `ai/reviews/003-dashboard-and-sidebar-clarity-improvements.review.md`
+- Summary of changes:
+  - Adjusted the shared main layout so sidebar open and close controls now exist as explicit interactions on both mobile and desktop layouts.
+  - Kept the mobile drawer behavior, and added desktop sidebar closing plus a matching `Open sidebar` action in the page header when the desktop sidebar is hidden.
+  - Re-verified the updated frontend layout with `cd frontend && npm run typecheck`.
+- Notes:
+  - The earlier implementation only made the open and close interaction explicit on small screens, which is why the desktop experience still felt incomplete in practice.
+  - The desktop sidebar now behaves as a hideable left rail instead of being permanently fixed with no visible close control.
+- Known issues:
+  - No browser-driven verification was run after this follow-up fix.
+- Next suggested task:
+  - If needed, do a browser click-through to confirm the desktop and mobile sidebar interactions feel right in a real session.
+
+- Completed task: Verification and workflow updates.
+- Changed files:
+  - `ai/tasks/003-dashboard-and-sidebar-clarity-improvements.tasks.md`
+  - `ai/logs/003-dashboard-and-sidebar-clarity-improvements.log.md`
+  - `ai/reviews/003-dashboard-and-sidebar-clarity-improvements.review.md`
+- Summary of changes:
+  - Re-verified the completed dashboard and sidebar clarity work through source-level inspection of the updated layout, dashboard cards, progress section, contribution section, and module-level summary blocks.
+  - Re-ran frontend typecheck and confirmed the updated dashboard and sidebar code still passes with `cd frontend && npm run typecheck`.
+  - Re-ran backend handler tests and confirmed the dashboard-related handler package still passes with `cd backend && go test ./internal/handlers/...`.
+  - Completed the remaining verification checklist items in the task file.
+  - Replaced the placeholder review file content with concrete validation results, remaining risks, and follow-up notes for feature `003`.
+- Notes:
+  - This verification pass combined automated checks plus source-level review rather than browser automation.
+  - The implemented clarity improvements now cover sidebar interaction, card wording, progress explanation, contribution readability, and module-level dashboard summaries.
+- Known issues:
+  - No browser-driven click-through or visual regression evidence exists yet for the mobile drawer, light/dark theme visuals, or dashboard readability in a real session.
+  - The backend summary model still mixes daily, weekly, and monthly scopes, so the frontend must continue explaining period context clearly until a future reporting enhancement changes the API.
+- Next suggested task:
+  - No unchecked tasks remain in `ai/tasks/003-dashboard-and-sidebar-clarity-improvements.tasks.md`; continue with follow-up fixes from the review or open a new issue if you want deeper reporting features.
+
+- Completed task: Verified backend summary support needs, confirmed no backend payload changes were required for this clarity pass, and re-verified dashboard route registration plus handler responses.
+- Changed files:
+  - `ai/tasks/003-dashboard-and-sidebar-clarity-improvements.tasks.md`
+  - `ai/logs/003-dashboard-and-sidebar-clarity-improvements.log.md`
+- Summary of changes:
+  - Reviewed `backend/internal/handlers/dashboard.go` and confirmed the existing dashboard summary plus contribution responses already provide the fields needed for the completed frontend clarity improvements.
+  - Confirmed that no backend payload change was required in this pass because the current frontend improvements focused on wording, grouping, period labeling, and interpretation of values rather than introducing new period selectors or additional module aggregates.
+  - Confirmed that the dashboard routes remain registered in `backend/internal/handlers/router.go` for both `/api/dashboard/summary` and `/api/dashboard/contribution-graph`.
+  - Re-verified the current backend handler behavior with `cd backend && go test ./internal/handlers/...`, which still passes.
+- Notes:
+  - The current backend summary shape still mixes daily, weekly, and monthly scopes, but the frontend now explains those differences more clearly, so an API redesign is not required for this feature pass.
+  - The checklist item about adjusting backend summary behavior was satisfied by verification that no change was needed right now.
+- Known issues:
+  - The backend still does not expose a normalized cross-module period model such as explicit day, week, month, and year variants for every module.
+  - A future enhancement may still want richer summary payloads if the product later needs true period switching or more advanced dashboard comparisons.
+- Next suggested task:
+  - Verify sidebar open and close behavior on relevant layouts.
+
+- Completed task: Improved module-level dashboard summaries for Sholat, Puasa, Keuangan, Olahraga, and Jurnal using clearer per-module summary cards.
+- Changed files:
+  - `frontend/app/routes/dashboard.tsx`
+  - `ai/tasks/003-dashboard-and-sidebar-clarity-improvements.tasks.md`
+  - `ai/logs/003-dashboard-and-sidebar-clarity-improvements.log.md`
+- Summary of changes:
+  - Replaced the old generic `Ibadah` and `Aktivitas` dashboard summaries with module-specific summary cards for Sholat, Puasa, Keuangan, Olahraga, and Jurnal.
+  - Added explicit period labels to each module summary so users can quickly see whether the summary refers to today, this week, or this month.
+  - Updated each summary card to surface more actionable module-specific statements while keeping the same backend-backed dashboard summary values as the source of truth.
+  - Added one compact cross-module context card to explain that the dashboard still mixes daily, weekly, and monthly module periods in the current summary model.
+  - Verified the updated dashboard route passes frontend typecheck with `cd frontend && npm run typecheck`.
+- Notes:
+  - This pass focused on clarity and grouping only; it did not add new backend summary fields or period selectors.
+  - The module summary section now better reflects the actual MVP modules instead of grouping them into vague categories.
+- Known issues:
+  - No browser-driven visual review was run in this pass.
+  - The dashboard still depends on the mixed-period backend summary shape, so the cross-module card is still needed to explain why different module summaries use different periods.
+- Next suggested task:
+  - Verify whether backend dashboard summary data needs changes to support the updated dashboard clarity goals.
+
+- Completed task: Reviewed contribution clarity, improved activity-pattern labels and explanations, then verified active and inactive periods are easier to distinguish.
+- Changed files:
+  - `frontend/app/components/contribution-graph.tsx`
+  - `frontend/app/routes/dashboard.tsx`
+  - `ai/tasks/003-dashboard-and-sidebar-clarity-improvements.tasks.md`
+  - `ai/logs/003-dashboard-and-sidebar-clarity-improvements.log.md`
+- Summary of changes:
+  - Reviewed the contribution section and confirmed the main clarity gaps were a generic title, limited period explanation, and the lack of a legend for understanding color intensity.
+  - Updated the contribution component to show a clearer title, a date-range explanation, counts for monitored days, active days, and inactive days, plus a small legend for intensity levels.
+  - Passed the backend-provided `start_date` and `end_date` values from the dashboard route into the contribution component so the visual now explains which time window is being shown.
+  - Added clearer tooltip and accessibility labels for each contribution day so the per-day score is easier to interpret.
+  - Verified the updated frontend still passes typecheck with `cd frontend && npm run typecheck`.
+- Notes:
+  - This pass kept the same backend contribution data source and did not change the scoring logic itself.
+  - The contribution section now communicates both the presence of activity and the relative intensity of activity more explicitly.
+- Known issues:
+  - No browser-based validation or visual snapshot review was run in this pass.
+  - The contribution graph still shows score intensity without naming the exact module source for each day, which may remain acceptable until a later reporting enhancement is requested.
+- Next suggested task:
+  - Improve Sholat dashboard summary clarity across useful time ranges.
+
+- Completed task: Reviewed progress clarity, improved progress labels and context, then verified the progress section remains accurate after the update.
+- Changed files:
+  - `frontend/app/routes/dashboard.tsx`
+  - `ai/tasks/003-dashboard-and-sidebar-clarity-improvements.tasks.md`
+  - `ai/logs/003-dashboard-and-sidebar-clarity-improvements.log.md`
+- Summary of changes:
+  - Reviewed the current progress section and confirmed that the main ambiguity came from showing a percentage without enough explanation of how it was calculated.
+  - Updated the `Progress Harian` card so the value, description, and footer now explain that the score is based on 4 daily indicators for the selected date.
+  - Added a visible breakdown list inside the card footer so users can see which indicators are already fulfilled and which are still incomplete.
+  - Refactored the progress calculation to reuse a shared progress-detail helper, keeping the percentage and indicator breakdown aligned to the same source values.
+  - Verified the updated dashboard route passes frontend typecheck with `cd frontend && npm run typecheck`.
+- Notes:
+  - The progress card still remains frontend-derived from the loaded dashboard summary, which is consistent with the current feature scope and existing backend API shape.
+  - This pass focused only on progress clarity and did not change contribution wording or lower module summary content yet.
+- Known issues:
+  - No browser-based validation was run, so the readability improvement was verified through source inspection and typecheck only.
+  - The progress score still reflects the current 4-indicator design and not a broader multi-period scoring system.
+- Next suggested task:
+  - Review the current contribution or activity-pattern presentation.
+
+- Completed task: Reviewed dashboard card clarity, improved card wording and supporting context, then verified the cards still reflect real stored records.
+- Changed files:
+  - `frontend/app/routes/dashboard.tsx`
+  - `ai/tasks/003-dashboard-and-sidebar-clarity-improvements.tasks.md`
+  - `ai/logs/003-dashboard-and-sidebar-clarity-improvements.log.md`
+- Summary of changes:
+  - Reviewed the existing dashboard cards and confirmed the main clarity problems were ambiguous titles, mixed period wording, and descriptions that did not explain what the primary values represented.
+  - Updated the six top summary cards so each one now uses a clearer title, a more explicit value presentation, and supporting text that explains the meaning of the number or status shown.
+  - Added small footer context chips to each card so the period and interpretation of the value are visible at a glance without changing the underlying backend data flow.
+  - Kept the same loader sources from `/api/dashboard/summary` and verified the progress card still derives from the same loaded summary values rather than introducing a new data path.
+  - Verified the updated dashboard route passes frontend typecheck with `cd frontend && npm run typecheck`.
+- Notes:
+  - The finance, sport, and progress cards now expose their time scope and meaning more explicitly, which reduces the previous ambiguity caused by mixed daily, weekly, and monthly values appearing together.
+  - The progress card is still a frontend-derived indicator, but its description now states exactly which four daily signals are counted.
+  - This pass stayed focused on card clarity only and did not yet redesign the contribution section or lower module summary sections.
+- Known issues:
+  - No browser-based visual review was run in this pass, so readability improvements were verified through source inspection and typecheck rather than live screenshots.
+  - The dashboard still mixes different periods in one grid, but the card-level labeling now makes those period differences more visible.
+- Next suggested task:
+  - Review which progress values or percentages currently lack clear meaning.
+
+- Completed task: Added explicit sidebar open and close interaction, then verified module navigation remains clear after the sidebar behavior changes.
+- Changed files:
+  - `frontend/app/components/main-layout.tsx`
+  - `ai/tasks/003-dashboard-and-sidebar-clarity-improvements.tasks.md`
+  - `ai/logs/003-dashboard-and-sidebar-clarity-improvements.log.md`
+- Summary of changes:
+  - Reworked the shared main layout so mobile navigation now uses an explicit sidebar drawer instead of always showing a horizontally scrollable route row.
+  - Added a visible `Modules` button in the page header on smaller screens to open the sidebar intentionally.
+  - Added a close button and backdrop-dismiss behavior for the mobile sidebar so users can close it explicitly and return focus to the page content.
+  - Kept the existing large-screen sidebar as a persistent left rail and reused the centralized navigation config for both layouts so module navigation stays consistent.
+  - Verified the updated layout passes frontend typecheck with `cd frontend && npm run typecheck`.
+- Notes:
+  - The mobile sidebar closes automatically on route changes, which keeps navigation flow simple after selecting a module.
+  - The same navigation items are still sourced from `frontend/app/lib/navigation.ts`, so no route structure changed during this task group.
+  - Sidebar usability work in this pass stayed limited to shared layout interaction and did not alter dashboard card or summary content.
+- Known issues:
+  - Verification in this pass was source-level plus frontend typecheck; no browser click-through or visual snapshot test was run.
+  - The desktop sidebar remains always visible by design, which is still aligned with the current task scope.
+- Next suggested task:
+  - Review existing dashboard cards and identify which labels or values are unclear.
+
+- Completed task: Review the current shared sidebar behavior on small and large screen layouts.
+- Changed files:
+  - `ai/tasks/003-dashboard-and-sidebar-clarity-improvements.tasks.md`
+  - `ai/logs/003-dashboard-and-sidebar-clarity-improvements.log.md`
+- Summary of changes:
+  - Reviewed the current shared sidebar behavior in `frontend/app/components/main-layout.tsx` for both smaller and larger layouts.
+  - Confirmed that on large screens the sidebar is rendered as a fixed left rail with persistent visibility and standard vertical navigation.
+  - Confirmed that on smaller screens the same navigation remains directly visible in the layout and falls back to a horizontally scrollable nav row instead of a dedicated collapsible sidebar pattern.
+  - Confirmed that the current layout does not yet expose explicit open or close controls, so the next sidebar tasks can stay narrowly focused on introducing those interactions.
+- Notes:
+  - The existing large-screen behavior is already usable and mostly stable; the clarity gap is more noticeable on smaller screens.
+  - The current small-screen behavior prioritizes quick access to routes, but it does not match the raw-idea expectation of a sidebar that can be opened and closed intentionally.
+  - Because the navigation structure is already centralized in `frontend/app/lib/navigation.ts`, the next changes can focus on layout interaction rather than route definitions.
+- Known issues:
+  - There is no explicit mobile sidebar state yet.
+  - The current small-screen horizontal navigation can feel like a toolbar rather than a true sidebar.
+- Next suggested task:
+  - Add explicit sidebar open interaction.
+
+- Completed task: Confirm whether the current backend dashboard summary endpoint already supports the time-range clarity needed for MVP modules.
+- Changed files:
+  - `ai/tasks/003-dashboard-and-sidebar-clarity-improvements.tasks.md`
+  - `ai/logs/003-dashboard-and-sidebar-clarity-improvements.log.md`
+- Summary of changes:
+  - Confirmed that the current backend dashboard summary endpoint already provides real summary data for the MVP modules, but its time-range support is only partially aligned with the clarity goals of feature `003`.
+  - Confirmed that `backend/internal/handlers/dashboard.go` currently returns a fixed mix of periods: daily sholat, daily puasa, monthly finance, weekly sport, and daily journal status.
+  - Confirmed that the endpoint accepts an optional `date` query, which allows the summary to move across dates, but it does not expose a unified period-selection model such as explicit day, week, month, or year summaries per module.
+  - Confirmed that the existing summary response is sufficient for early wording and layout improvements, but not sufficient by itself for richer per-module period comparisons like today, this week, this month, and this year across all MVP modules.
+- Notes:
+  - The backend already gives enough real data to improve dashboard clarity without blocking on immediate API redesign.
+  - The main current gap is consistency of period granularity, not the absence of all summary data.
+  - Any later backend change should stay targeted to summary clarity needs rather than expanding into unrelated reporting features.
+- Known issues:
+  - The current summary endpoint mixes period scopes by design, which makes the frontend responsible for explaining different time contexts clearly.
+  - The current endpoint does not yet provide a normalized structure for cross-module time-range selection or comparison.
+- Next suggested task:
+  - Review the current shared sidebar behavior on small and large screen layouts.
+
+- Completed task: Confirm which dashboard values already come from real backend data and which sections still feel generic or ambiguous.
+- Changed files:
+  - `ai/tasks/003-dashboard-and-sidebar-clarity-improvements.tasks.md`
+  - `ai/logs/003-dashboard-and-sidebar-clarity-improvements.log.md`
+- Summary of changes:
+  - Confirmed that the current dashboard uses real backend data for the six top summary cards through `/api/dashboard/summary`, covering sholat completion, puasa status, monthly finance totals, weekly sport totals, journal-written status, and the derived overall progress percentage.
+  - Confirmed that the contribution grid also uses real backend data through `/api/dashboard/contribution-graph`.
+  - Confirmed that the current dashboard combines backend-backed values with frontend-derived labels and descriptions inside `frontend/app/routes/dashboard.tsx`, which means clarity issues are currently caused more by presentation and wording than by missing live data in the existing cards.
+  - Identified the most generic or ambiguous sections as the `Progress` card description, the contribution panel title and explanation, the empty-state journal panel copy, and the two inline module summary sections labeled `Ibadah` and `Aktivitas`.
+- Notes:
+  - The `Progress` card is backend-informed only indirectly because its percentage is calculated on the frontend from already loaded summary values rather than returned as its own backend field.
+  - The finance card already reflects real monthly totals, but its placement beside daily and weekly cards contributes to mixed time-scope ambiguity.
+  - The `Ibadah` and `Aktivitas` sections currently use static phrasing built from a small set of values instead of more explicit per-period summaries.
+  - The journal side panel is conditionally real, but its copy remains generic whether data exists or not.
+- Known issues:
+  - The current dashboard does not clearly signal which cards are daily, weekly, or monthly at the same visual level, even though the underlying values are mostly real.
+  - Some perceived dashboard vagueness comes from frontend wording and grouping rather than missing backend support.
+- Next suggested task:
+  - Confirm whether the current backend dashboard summary endpoint already supports the time-range clarity needed for MVP modules.
+
+- Completed task: Confirm the current dashboard route, shared layout, navigation config, and summary components involved in sidebar and dashboard clarity.
+- Changed files:
+  - `ai/tasks/003-dashboard-and-sidebar-clarity-improvements.tasks.md`
+  - `ai/logs/003-dashboard-and-sidebar-clarity-improvements.log.md`
+- Summary of changes:
+  - Confirmed that `frontend/app/routes/dashboard.tsx` is the main dashboard route responsible for loader-based summary fetching, card composition, contribution rendering, journal empty state, and generic module summary sections.
+  - Confirmed that `frontend/app/components/main-layout.tsx` is the shared layout shell responsible for sidebar rendering, header rendering, theme toggle placement, and the current small-screen navigation behavior.
+  - Confirmed that `frontend/app/lib/navigation.ts` is the shared navigation config that defines the module menu structure used by the sidebar.
+  - Confirmed that `frontend/app/components/summary-card.tsx` and `frontend/app/components/contribution-graph.tsx` are the reusable summary components directly involved in dashboard clarity work.
+- Notes:
+  - The dashboard route currently composes both page-level meaning and low-level presentation details in one file, so later clarity improvements may touch both route copy and shared component props.
+  - The current layout places navigation directly in the sidebar with horizontal scrolling on smaller screens instead of a collapsible mobile pattern.
+  - The current navigation config is already centralized, which should make later sidebar-label or ordering adjustments localized.
+  - The current summary-card and contribution-graph components are reusable enough for clarity work without introducing new component infrastructure first.
+- Known issues:
+  - The current dashboard route still owns generic inline module summary rendering through a local `ModuleSummary` helper rather than a clearer shared dashboard-specific component.
+  - Sidebar behavior is still layout-bound and static, which limits clarity improvements until explicit open and close interaction is introduced in a later task.
+- Next suggested task:
+  - Confirm which dashboard values already come from real backend data and which sections still feel generic or ambiguous.
+
+- Completed task: Review feature `002` review and current dashboard-related implementation details that affect this enhancement.
+- Changed files:
+  - `ai/tasks/003-dashboard-and-sidebar-clarity-improvements.tasks.md`
+  - `ai/logs/003-dashboard-and-sidebar-clarity-improvements.log.md`
+- Summary of changes:
+  - Reviewed the completed `002` review to capture the current verified baseline for dashboard refresh behavior, theme persistence, and remaining test gaps.
+  - Reviewed the current dashboard route, shared layout, navigation config, summary card component, contribution graph component, and dashboard backend handler to understand the present implementation boundaries before making UI changes.
+  - Confirmed the dashboard already revalidates from shared tracker-data change signals and reads from backend summary plus contribution endpoints, so later clarity work should build on the existing data flow rather than replacing it.
+  - Confirmed the current dashboard still uses simple aggregate summaries and generic module sections, which makes this enhancement primarily a clarity and presentation improvement rather than a CRUD or routing expansion.
+- Notes:
+  - The `002` review shows the current baseline already addressed CORS allowlisting, local date defaults, and dashboard refresh signaling.
+  - The current dashboard route uses six summary cards, a contribution graph, a journal empty-state panel, and two generic module summary sections labeled `Ibadah` and `Aktivitas`.
+  - The current shared layout still renders the sidebar as always visible content with horizontal overflow on smaller screens and no explicit open or close control yet.
+  - The backend dashboard summary currently provides daily sholat, puasa, and journal status, monthly finance totals, weekly sport totals, and a separate contribution graph response.
+- Known issues:
+  - No browser-driven verification exists yet for sidebar usability or dashboard comprehension in a real session.
+  - The current dashboard mixes different time scopes such as daily, weekly, and monthly values in the same first-glance card grid, which likely contributes to clarity problems.
+- Next suggested task:
+  - Confirm the current dashboard route, shared layout, navigation config, and summary components involved in sidebar and dashboard clarity.
+
+- Completed task: Prepared feature workflow files.
+- Changed files:
+  - `ai/prompts/003-dashboard-and-sidebar-clarity-improvements.prompt.md`
+  - `ai/plans/003-dashboard-and-sidebar-clarity-improvements.plan.md`
+  - `ai/tasks/003-dashboard-and-sidebar-clarity-improvements.tasks.md`
+  - `ai/logs/003-dashboard-and-sidebar-clarity-improvements.log.md`
+  - `ai/reviews/003-dashboard-and-sidebar-clarity-improvements.review.md`
+- Summary of changes:
+  - Converted the issue into a refined implementation prompt for the dashboard and sidebar clarity enhancement.
+  - Created a focused implementation plan aligned with the current repo structure and approved tech stack.
+  - Broke the work into checklist-driven tasks for discovery, sidebar usability, dashboard clarity, backend support, and verification.
+  - Initialized the log and review files for future implementation tracking.
+- Notes:
+  - No application code was written in this step.
+  - The current repo structure uses `frontend/app/`, so the workflow artifacts follow the existing project convention while remaining aligned with the approved stack.
+  - Backend dashboard changes are intentionally treated as conditional and should only happen if the current summary payload blocks the clarity goals.
+- Known issues:
+  - None yet at the workflow-preparation stage.
+- Next suggested task:
+  - Review feature `002` review and current dashboard-related implementation details that affect this enhancement.
