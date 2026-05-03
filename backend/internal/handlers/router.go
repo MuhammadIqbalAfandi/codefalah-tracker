@@ -72,6 +72,7 @@ func NewRouter(logger *slog.Logger, queries *trackerdb.Queries) http.Handler {
 	})
 	r.Get("/api/dashboard/summary", routerHandlers.getDashboardSummary)
 	r.Get("/api/dashboard/contribution-graph", routerHandlers.getContributionGraph)
+	r.Get("/api/dashboard/module-contributions", routerHandlers.getModuleContributions)
 
 	return r
 }

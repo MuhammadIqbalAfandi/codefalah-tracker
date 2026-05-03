@@ -79,6 +79,8 @@ func TestDashboardEndpointsRejectInvalidDates(t *testing.T) {
 		"/api/dashboard/summary?date=bad-date",
 		"/api/dashboard/contribution-graph?start_date=bad-date",
 		"/api/dashboard/contribution-graph?start_date=2026-05-02&end_date=2026-05-01",
+		"/api/dashboard/module-contributions?start_date=bad-date",
+		"/api/dashboard/module-contributions?start_date=2026-05-02&end_date=2026-05-01",
 	}
 
 	for _, path := range tests {

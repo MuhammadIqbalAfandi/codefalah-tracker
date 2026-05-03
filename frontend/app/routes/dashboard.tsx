@@ -1,22 +1,20 @@
 import {
+  ArrowRight,
   BookOpenText,
-  CheckCircle2,
   Dumbbell,
   Landmark,
   Moon,
   WalletCards,
 } from "lucide-react";
 import { useEffect } from "react";
-import { useLoaderData, useRevalidator } from "react-router";
+import { Link, useLoaderData, useRevalidator } from "react-router";
 
 import type { Route } from "./+types/dashboard";
 import { ContributionGraph } from "~/components/contribution-graph";
 import { EmptyState } from "~/components/empty-state";
 import { formatLocalDateInputValue } from "~/lib/form-defaults";
 import { subscribeToTrackerDataChanges } from "~/lib/tracker-sync";
-import { cn } from "~/lib/utils";
 import { MainLayout } from "~/components/main-layout";
-import { SummaryCard } from "~/components/summary-card";
 import { apiRequest } from "~/services/api-client";
 
 export function meta({}: Route.MetaArgs) {
@@ -53,18 +51,24 @@ type DashboardSummary = {
   };
 };
 
-type ContributionGraphResponse = {
+type ModuleKey = "sholat" | "puasa" | "keuangan" | "olahraga" | "jurnal";
+
+type ModuleContributionResponse = {
   start_date: string;
   end_date: string;
-  days: Array<{
-    date: string;
-    score: number;
+  modules: Array<{
+    module: ModuleKey;
+    label: string;
+    days: Array<{
+      date: string;
+      score: number;
+    }>;
   }>;
 };
 
 type DashboardLoaderData = {
   summary: DashboardSummary;
-  contribution: ContributionGraphResponse;
+  moduleContributions: ModuleContributionResponse;
   apiError?: string;
 };
 
@@ -92,38 +96,47 @@ const emptySummary: DashboardSummary = {
   },
 };
 
-const emptyContribution: ContributionGraphResponse = {
+const emptyModuleContributions: ModuleContributionResponse = {
   start_date: "",
   end_date: "",
-  days: [],
+  modules: [
+    { module: "sholat", label: "Sholat", days: [] },
+    { module: "puasa", label: "Puasa", days: [] },
+    { module: "keuangan", label: "Keuangan", days: [] },
+    { module: "olahraga", label: "Olahraga", days: [] },
+    { module: "jurnal", label: "Jurnal", days: [] },
+  ],
 };
 
 export async function loader(): Promise<DashboardLoaderData> {
-  const [summaryResult, contributionResult] = await Promise.allSettled([
+  const [summaryResult, moduleContributionsResult] = await Promise.allSettled([
     apiRequest<DashboardSummary>("/api/dashboard/summary"),
-    apiRequest<ContributionGraphResponse>("/api/dashboard/contribution-graph"),
+    apiRequest<ModuleContributionResponse>(
+      "/api/dashboard/module-contributions",
+    ),
   ]);
 
   const summary =
     summaryResult.status === "fulfilled" ? summaryResult.value : emptySummary;
-  const contribution =
-    contributionResult.status === "fulfilled"
-      ? contributionResult.value
-      : emptyContribution;
+  const moduleContributions =
+    moduleContributionsResult.status === "fulfilled"
+      ? moduleContributionsResult.value
+      : emptyModuleContributions;
 
   return {
     summary,
-    contribution,
+    moduleContributions,
     apiError:
       summaryResult.status === "rejected" ||
-      contributionResult.status === "rejected"
+      moduleContributionsResult.status === "rejected"
         ? "Data backend belum tersedia. Dashboard menampilkan nilai kosong sementara."
         : undefined,
   };
 }
 
 export default function DashboardRoute() {
-  const { summary, contribution, apiError } = useLoaderData<typeof loader>();
+  const { summary, moduleContributions, apiError } =
+    useLoaderData<typeof loader>();
   const revalidator = useRevalidator();
 
   useEffect(() => {
@@ -133,20 +146,17 @@ export default function DashboardRoute() {
   }, [revalidator]);
 
   const sholatValue = `${summary.sholat.completed_count} dari ${summary.sholat.total_count}`;
-  const puasaValue = summary.puasa.fast_type
-    ? summary.puasa.completed
-      ? summary.puasa.fast_type
-      : summary.puasa.fast_type
-    : "Tidak puasa";
   const financeBalance = formatCurrency(summary.finance.balance);
   const progressPercent = getProgressPercent(summary);
   const completedDailySignals = getCompletedDailySignals(summary);
-  const progressDetails = getProgressDetails(summary);
+  const activeModulesCount = moduleContributions.modules.filter(
+    (module) => module.days.length > 0,
+  ).length;
 
   return (
     <MainLayout
       title="Dashboard"
-      description="Ringkasan awal untuk memantau ibadah, keuangan, olahraga, dan jurnal harian."
+      description="Contribution view per module menjadi pusat utama untuk membaca konsistensi aktivitas harian."
     >
       {apiError ? (
         <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-200">
@@ -154,257 +164,202 @@ export default function DashboardRoute() {
         </div>
       ) : null}
 
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        <SummaryCard
-          title="Sholat Hari Ini"
-          value={sholatValue}
-          description={`Jumlah sholat yang sudah tercatat pada ${summary.date}.`}
-          icon={Landmark}
-          tone="green"
-          footer={
-            <CardFooter
-              periodLabel="Periode: hari ini"
-              detailLabel="Sumber: data sholat tersimpan"
+      <section className="grid gap-4 xl:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
+        <article className="rounded-3xl border border-border bg-card p-6 shadow-sm">
+          <span className="rounded-full bg-muted px-3 py-1 text-xs font-medium text-muted-foreground">
+            Fokus utama dashboard
+          </span>
+          <h2 className="mt-4 text-2xl font-semibold tracking-tight text-foreground">
+            Contribution per module sekarang jadi pusat pembacaan progres.
+          </h2>
+          <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
+            Gunakan lima kartu module di bawah untuk melihat pola kontribusi 12
+            bulan terakhir. Ringkasan angka tetap ada sebagai konteks cepat,
+            tetapi struktur utama dashboard sekarang diprioritaskan untuk
+            membaca konsistensi aktivitas harian.
+          </p>
+          <div className="mt-5 flex flex-wrap gap-2 text-xs text-muted-foreground">
+            <span className="rounded-full bg-muted px-3 py-1">
+              Tanggal acuan: {summary.date}
+            </span>
+            <span className="rounded-full bg-muted px-3 py-1">
+              Progress harian: {progressPercent}% selesai
+            </span>
+            <span className="rounded-full bg-muted px-3 py-1">
+              {completedDailySignals} dari 4 indikator terpenuhi
+            </span>
+            <span className="rounded-full bg-muted px-3 py-1">
+              {activeModulesCount} module sudah punya kontribusi
+            </span>
+          </div>
+        </article>
+
+        <article className="rounded-3xl border border-border bg-card p-6 shadow-sm">
+          <h2 className="text-sm font-semibold text-foreground">
+            Ringkasan cepat hari ini
+          </h2>
+          <div className="mt-4 grid gap-3 text-sm text-muted-foreground">
+            <QuickStat
+              label="Sholat"
+              value={sholatValue}
+              detail="Catatan harian"
             />
-          }
-        />
-        <SummaryCard
-          title="Puasa Hari Ini"
-          value={puasaValue}
-          description={
-            summary.puasa.fast_type
-              ? summary.puasa.completed
-                ? "Jenis puasa yang sudah selesai dicatat untuk hari ini."
-                : "Jenis puasa yang sedang berjalan atau belum selesai untuk hari ini."
-              : "Belum ada puasa yang tercatat untuk hari ini."
-          }
-          icon={Moon}
-          tone="blue"
-          footer={
-            <CardFooter
-              periodLabel="Periode: hari ini"
-              detailLabel="Sumber: data puasa tersimpan"
+            <QuickStat
+              label="Puasa"
+              value={getPuasaSummaryValue(summary)}
+              detail="Status hari ini"
             />
-          }
-        />
-        <SummaryCard
-          title="Saldo Bulan Ini"
-          value={financeBalance}
-          description={`Ringkasan keuangan bulan ini: ${formatCurrency(summary.finance.income)} pemasukan dan ${formatCurrency(summary.finance.expense)} pengeluaran.`}
-          icon={WalletCards}
-          tone="amber"
-          footer={
-            <CardFooter
-              periodLabel="Periode: bulan ini"
-              detailLabel="Nilai utama: saldo berjalan"
+            <QuickStat
+              label="Keuangan"
+              value={financeBalance}
+              detail="Saldo bulan ini"
             />
-          }
-        />
-        <SummaryCard
-          title="Olahraga Minggu Ini"
-          value={`${summary.sport.completed_minutes} menit`}
-          description={`${summary.sport.completed_count} sesi olahraga selesai tercatat pada minggu ini.`}
-          icon={Dumbbell}
-          tone="rose"
-          footer={
-            <CardFooter
-              periodLabel="Periode: minggu ini"
-              detailLabel="Nilai utama: total durasi selesai"
+            <QuickStat
+              label="Olahraga"
+              value={`${summary.sport.completed_minutes} menit`}
+              detail="Durasi minggu ini"
             />
-          }
-        />
-        <SummaryCard
-          title="Jurnal Hari Ini"
-          value={summary.journal.written ? "Sudah ditulis" : "Belum ditulis"}
-          description={`Status catatan jurnal untuk tanggal ${summary.date}.`}
-          icon={BookOpenText}
-          tone="neutral"
-          footer={
-            <CardFooter
-              periodLabel="Periode: hari ini"
-              detailLabel="Sumber: data jurnal tersimpan"
+            <QuickStat
+              label="Jurnal"
+              value={summary.journal.written ? "Sudah ditulis" : "Belum ditulis"}
+              detail="Status hari ini"
             />
-          }
-        />
-        <SummaryCard
-          title="Progress Harian"
-          value={`${progressPercent}% selesai`}
-          description={`${completedDailySignals} dari 4 indikator harian sudah terpenuhi untuk ${summary.date}. Progress ini dihitung dari sholat lengkap, puasa selesai, olahraga tercatat, dan jurnal ditulis.`}
-          icon={CheckCircle2}
-          tone="green"
-          footer={
-            <div className="grid gap-2 text-xs text-muted-foreground">
-              <CardFooter
-                periodLabel="Periode: hari ini"
-                detailLabel="Perhitungan: 4 indikator aktivitas"
-              />
-              <ProgressBreakdown details={progressDetails} />
-            </div>
-          }
-        />
+          </div>
+        </article>
       </section>
 
-      <section className="grid gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(280px,1fr)]">
-        <ContributionGraph
-          days={contribution.days}
-          startDate={contribution.start_date}
-          endDate={contribution.end_date}
-        />
-        {summary.journal.written ? (
-          <section className="rounded-lg border border-border bg-card p-4 text-card-foreground shadow-sm">
-            <h2 className="text-sm font-semibold text-foreground">
-              Jurnal hari ini
+      <section className="grid gap-4">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-foreground">
+              Contribution per module
             </h2>
-            <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              Jurnal sudah ditulis. Buka Jurnal Harian untuk melihat timeline
-              dan catatan lengkap.
+            <p className="text-sm text-muted-foreground">
+              Setiap kartu di bawah mewakili satu module dengan pola kontribusi
+              hariannya sendiri.
             </p>
-          </section>
-        ) : (
-          <EmptyState
-            icon={BookOpenText}
-            title="Belum ada catatan hari ini"
-            description="Jurnal, riwayat tracker, dan insight singkat akan muncul setelah module mulai digunakan."
-          />
-        )}
-      </section>
-
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        <ModuleSummary
-          title="Ringkasan Sholat"
-          periodLabel="Hari ini"
-          items={[
-            `${summary.sholat.completed_count} dari ${summary.sholat.total_count} sholat sudah tercatat`,
-            summary.sholat.completed_count >= summary.sholat.total_count
-              ? "Semua waktu sholat hari ini sudah lengkap"
-              : `${summary.sholat.total_count - summary.sholat.completed_count} waktu sholat masih belum tercatat`,
-          ]}
-        />
-        <ModuleSummary
-          title="Ringkasan Puasa"
-          periodLabel="Hari ini"
-          items={[
-            summary.puasa.fast_type
-              ? `Puasa ${summary.puasa.fast_type} ${summary.puasa.completed ? "sudah selesai" : "masih berjalan atau belum selesai"}`
-              : "Belum ada catatan puasa untuk hari ini",
-            summary.puasa.fast_type
-              ? "Status puasa diambil dari record puasa yang tersimpan"
-              : "Tambahkan record puasa jika ada aktivitas puasa hari ini",
-          ]}
-        />
-        <ModuleSummary
-          title="Ringkasan Keuangan"
-          periodLabel="Bulan ini"
-          items={[
-            `Saldo berjalan ${financeBalance}`,
-            `${formatCurrency(summary.finance.income)} pemasukan dan ${formatCurrency(summary.finance.expense)} pengeluaran`,
-          ]}
-        />
-        <ModuleSummary
-          title="Ringkasan Olahraga"
-          periodLabel="Minggu ini"
-          items={[
-            `${summary.sport.completed_count} sesi olahraga selesai`,
-            `${summary.sport.completed_minutes} menit total durasi tercatat`,
-          ]}
-        />
-        <ModuleSummary
-          title="Ringkasan Jurnal"
-          periodLabel="Hari ini"
-          items={[
-            summary.journal.written
-              ? "Jurnal hari ini sudah ditulis"
-              : "Jurnal hari ini belum ditulis",
-            summary.journal.written
-              ? "Buka Jurnal Harian untuk melihat isi dan timeline catatan"
-              : "Tambahkan catatan jurnal untuk melengkapi refleksi harian",
-          ]}
-        />
-        <ModuleSummary
-          title="Ringkasan Aktivitas"
-          periodLabel="Gabungan periode aktif"
-          items={[
-            `Sholat dan jurnal memakai status harian ${summary.date}`,
-            "Olahraga merangkum minggu ini, keuangan merangkum bulan ini",
-            "Gunakan kartu utama di atas untuk melihat nilai tiap periode dengan cepat",
-          ]}
-        />
+          </div>
+          <span className="text-xs text-muted-foreground">
+            Rentang backend: {moduleContributions.start_date || "belum ada"}{" "}
+            sampai {moduleContributions.end_date || "belum ada"}
+          </span>
+        </div>
+        <div className="grid gap-4 xl:grid-cols-2">
+          {moduleContributions.modules.map((module) => (
+            <ModuleContributionCard
+              key={module.module}
+              module={module}
+              summary={summary}
+              startDate={moduleContributions.start_date}
+              endDate={moduleContributions.end_date}
+              rangeLabel={`${moduleContributions.start_date} sampai ${moduleContributions.end_date}`}
+            />
+          ))}
+        </div>
       </section>
     </MainLayout>
   );
 }
 
-function CardFooter({
-  periodLabel,
-  detailLabel,
+function ModuleContributionCard({
+  module,
+  summary,
+  startDate,
+  endDate,
+  rangeLabel,
 }: {
-  periodLabel: string;
-  detailLabel: string;
+  module: ModuleContributionResponse["modules"][number];
+  summary: DashboardSummary;
+  startDate: string;
+  endDate: string;
+  rangeLabel: string;
 }) {
-  return (
-    <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
-      <span className="rounded-full bg-muted px-2 py-1">{periodLabel}</span>
-      <span className="rounded-full bg-muted px-2 py-1">{detailLabel}</span>
-    </div>
-  );
-}
+  const metadata = moduleMeta[module.module];
 
-function ModuleSummary({
-  title,
-  periodLabel,
-  items,
-}: {
-  title: string;
-  periodLabel: string;
-  items: string[];
-}) {
   return (
-    <section className="rounded-lg border border-border bg-card p-4 shadow-sm">
-      <div className="flex items-start justify-between gap-3">
-        <h2 className="text-sm font-semibold text-foreground">{title}</h2>
-        <span className="rounded-full bg-muted px-2 py-1 text-xs text-muted-foreground">
-          {periodLabel}
-        </span>
-      </div>
-      <ul className="mt-3 grid gap-2 text-sm text-muted-foreground">
-        {items.map((item) => (
-          <li key={item} className="flex items-start gap-2">
-            <CheckCircle2
-              className="mt-0.5 size-4 shrink-0 text-emerald-600"
-              aria-hidden="true"
-            />
-            <span>{item}</span>
-          </li>
-        ))}
-      </ul>
-    </section>
-  );
-}
-
-function ProgressBreakdown({
-  details,
-}: {
-  details: Array<{ label: string; completed: boolean }>;
-}) {
-  return (
-    <ul className="grid gap-1.5">
-      {details.map((detail) => (
-        <li
-          key={detail.label}
-          className="flex items-center justify-between gap-3 rounded-md bg-muted/70 px-2 py-1.5"
+    <article className="rounded-3xl border border-border bg-card p-5 shadow-sm">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <div className="inline-flex items-center gap-2 rounded-full bg-muted px-3 py-1 text-xs font-medium text-muted-foreground">
+            <metadata.icon className="size-3.5" aria-hidden="true" />
+            {module.label}
+          </div>
+          <h3 className="mt-3 text-lg font-semibold text-foreground">
+            Contribution {module.label}
+          </h3>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {metadata.description}
+          </p>
+        </div>
+        <Link
+          to={metadata.contributionHref}
+          className="inline-flex items-center gap-1 rounded-full border border-border px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-muted"
         >
-          <span>{detail.label}</span>
-          <span
-            className={cn(
-              "font-medium",
-              detail.completed ? "text-emerald-700 dark:text-emerald-300" : "",
-            )}
+          Detail contribution
+          <ArrowRight className="size-3.5" aria-hidden="true" />
+        </Link>
+      </div>
+
+      {module.days.length === 0 ? (
+        <div className="mt-4">
+          <EmptyState
+            icon={metadata.icon}
+            title={`Belum ada kontribusi ${module.label.toLowerCase()}`}
+            description="Contribution graph akan terisi setelah module ini mulai dipakai."
+          />
+        </div>
+      ) : (
+        <div className="mt-4">
+          <ContributionGraph
+            title={`12 bulan terakhir`}
+            description={`Pola kontribusi ${module.label.toLowerCase()} pada rentang ${rangeLabel}.`}
+            days={module.days}
+            startDate={startDate}
+            endDate={endDate}
+          />
+        </div>
+      )}
+
+      <div className="mt-4 grid gap-2 text-sm text-muted-foreground">
+        {getModuleHighlights(module.module, summary).map((item) => (
+          <div
+            key={item}
+            className="rounded-2xl bg-muted/70 px-3 py-2 leading-6"
           >
-            {detail.completed ? "Terpenuhi" : "Belum"}
-          </span>
-        </li>
-      ))}
-    </ul>
+            {item}
+          </div>
+        ))}
+        <Link
+          to={metadata.href}
+          className="inline-flex items-center gap-2 rounded-2xl border border-border px-3 py-2 font-medium text-foreground transition-colors hover:bg-muted"
+        >
+          Buka module {module.label}
+          <ArrowRight className="size-4" aria-hidden="true" />
+        </Link>
+      </div>
+    </article>
+  );
+}
+
+function QuickStat({
+  label,
+  value,
+  detail,
+}: {
+  label: string;
+  value: string;
+  detail: string;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-3 rounded-2xl bg-muted/70 px-4 py-3">
+      <div>
+        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          {label}
+        </p>
+        <p className="mt-1 text-base font-semibold text-foreground">{value}</p>
+      </div>
+      <span className="text-xs text-muted-foreground">{detail}</span>
+    </div>
   );
 }
 
@@ -441,6 +396,96 @@ function getProgressDetails(summary: DashboardSummary) {
       completed: summary.journal.written,
     },
   ];
+}
+
+function getPuasaSummaryValue(summary: DashboardSummary) {
+  if (!summary.puasa.fast_type) {
+    return "Tidak puasa";
+  }
+
+  return summary.puasa.completed
+    ? `${summary.puasa.fast_type} selesai`
+    : `${summary.puasa.fast_type} berjalan`;
+}
+
+const moduleMeta = {
+  sholat: {
+    icon: Landmark,
+    href: "/sholat",
+    contributionHref: "/dashboard/contributions/sholat",
+    description:
+      "Kontribusi harian sholat berdasarkan kelengkapan catatan ibadah per tanggal.",
+  },
+  puasa: {
+    icon: Moon,
+    href: "/puasa",
+    contributionHref: "/dashboard/contributions/puasa",
+    description:
+      "Kontribusi puasa menyorot hari-hari ketika puasa dicatat dan diselesaikan.",
+  },
+  keuangan: {
+    icon: WalletCards,
+    href: "/keuangan",
+    contributionHref: "/dashboard/contributions/keuangan",
+    description:
+      "Kontribusi keuangan membantu melihat konsistensi pencatatan transaksi dari waktu ke waktu.",
+  },
+  olahraga: {
+    icon: Dumbbell,
+    href: "/olahraga",
+    contributionHref: "/dashboard/contributions/olahraga",
+    description:
+      "Kontribusi olahraga menampilkan hari-hari latihan yang benar-benar tercatat.",
+  },
+  jurnal: {
+    icon: BookOpenText,
+    href: "/jurnal",
+    contributionHref: "/dashboard/contributions/jurnal",
+    description:
+      "Kontribusi jurnal memperlihatkan pola hari aktif menulis dan refleksi pribadi.",
+  },
+} as const;
+
+function getModuleHighlights(module: ModuleKey, summary: DashboardSummary) {
+  switch (module) {
+    case "sholat":
+      return [
+        `${summary.sholat.completed_count} dari ${summary.sholat.total_count} sholat tercatat hari ini.`,
+        summary.sholat.completed_count >= summary.sholat.total_count
+          ? "Hari ini semua waktu sholat sudah lengkap."
+          : `${summary.sholat.total_count - summary.sholat.completed_count} waktu sholat masih belum tercatat.`,
+      ];
+    case "puasa":
+      return [
+        summary.puasa.fast_type
+          ? `Puasa ${summary.puasa.fast_type} ${summary.puasa.completed ? "sudah selesai" : "masih berjalan atau belum selesai"}.`
+          : "Belum ada catatan puasa untuk hari ini.",
+        summary.puasa.fast_type
+          ? "Status diambil dari record puasa yang tersimpan."
+          : "Tambahkan record puasa untuk mulai membentuk pola kontribusinya.",
+      ];
+    case "keuangan":
+      return [
+        `Saldo bulan ini ${formatCurrency(summary.finance.balance)}.`,
+        `${formatCurrency(summary.finance.income)} pemasukan dan ${formatCurrency(summary.finance.expense)} pengeluaran tercatat bulan ini.`,
+      ];
+    case "olahraga":
+      return [
+        `${summary.sport.completed_count} sesi olahraga selesai tercatat minggu ini.`,
+        `${summary.sport.completed_minutes} menit durasi selesai terkumpul minggu ini.`,
+      ];
+    case "jurnal":
+      return [
+        summary.journal.written
+          ? "Jurnal hari ini sudah ditulis."
+          : "Jurnal hari ini belum ditulis.",
+        summary.journal.written
+          ? "Buka module jurnal untuk melihat detail timeline dan isi catatan."
+          : "Tambahkan jurnal untuk memperjelas pola kontribusi refleksi harian.",
+      ];
+    default:
+      return ["Belum ada ringkasan tambahan."];
+  }
 }
 
 function formatCurrency(value: string) {

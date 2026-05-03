@@ -1,0 +1,472 @@
+# Log: Dashboard Revamp and Module Contribution Views
+
+## Status
+
+Implementation completed. Discovery And Shared Preparation, Backend Contribution Support, Dashboard Revamp, Shared Contribution Graph, Contribution Detail Route, Contribution Detail By Module, and Verification And Workflow Updates completed.
+
+## Entries
+
+### 2026-05-03
+
+- Completed task: Verified Sholat, Puasa, Keuangan, Olahraga, and Jurnal contribution detail behavior with corrected activity-list mapping.
+- Changed files:
+  - `frontend/app/routes/dashboard-contribution-detail.tsx`
+  - `ai/tasks/004-dashboard-revamp-and-module-contribution-views.tasks.md`
+  - `ai/logs/004-dashboard-revamp-and-module-contribution-views.log.md`
+- Summary of changes:
+  - Reworked the contribution detail loader so each module now paginates through the existing history endpoints instead of relying on a single capped fetch.
+  - Filtered the activity list by active contribution dates from the selected module graph, which keeps zero-score records from appearing as if they contributed.
+  - Kept the module-specific activity cards and links intact while tightening the explanatory copy so the page now describes active-day mapping more accurately.
+- Notes:
+  - Verified module behavior at the source level against the current contribution scoring rules:
+    - `Sholat` only shows days with at least one completed prayer.
+    - `Puasa` only shows completed fasting days that contribute a positive score.
+    - `Keuangan` keeps transaction-level detail on dates that contribute to the graph.
+    - `Olahraga` only shows completed sessions that produce a positive contribution day.
+    - `Jurnal` continues to map one entry day to one active contribution day.
+- Known issues:
+  - The detail route still reuses generic list endpoints rather than a dedicated backend date-range endpoint, so very large datasets now rely on frontend pagination instead of backend-side filtering.
+- Next suggested task:
+  - Run the final verification and update the review notes.
+
+- Completed task: Verified the remaining dashboard contribution flow and refreshed workflow documentation.
+- Changed files:
+  - `frontend/app/routes/dashboard-contribution-detail.tsx`
+  - `ai/tasks/004-dashboard-revamp-and-module-contribution-views.tasks.md`
+  - `ai/logs/004-dashboard-revamp-and-module-contribution-views.log.md`
+  - `ai/reviews/004-dashboard-revamp-and-module-contribution-views.review.md`
+- Summary of changes:
+  - Verified the dashboard cards already link into the correct contribution detail routes for all five modules.
+  - Verified the contribution detail graph and activity list now derive from the same active-day dataset instead of only sharing a broad date range.
+  - Re-ran backend and frontend project checks and marked the remaining workflow tasks as completed.
+- Notes:
+  - Verification commands run in this section:
+    - `cd frontend && npm run typecheck`
+    - `cd backend && go test ./...`
+  - Sidebar and theme compatibility were validated by preserving the existing shared `MainLayout` usage and route structure; no sidebar/theme-specific code paths were changed in this pass.
+- Known issues:
+  - No browser-driven click-through or visual regression pass was run in this section, so the completed verification is based on source inspection plus automated checks.
+- Next suggested task:
+  - Review the finished feature in a browser with dense real data if a visual QA pass is needed.
+
+- Completed task: Added frontend route registration for a module contribution detail page.
+- Changed files:
+  - `frontend/app/routes.ts`
+  - `frontend/app/routes/dashboard.tsx`
+  - `frontend/app/routes/dashboard-contribution-detail.tsx`
+  - `ai/tasks/004-dashboard-revamp-and-module-contribution-views.tasks.md`
+  - `ai/logs/004-dashboard-revamp-and-module-contribution-views.log.md`
+- Summary of changes:
+  - Added the new route pattern `/dashboard/contributions/:module` to the frontend route registry.
+  - Updated dashboard contribution cards so the primary CTA now opens the new contribution detail route instead of only linking back to the base module page.
+  - Kept a separate module link inside each dashboard card so the user can still jump directly to the original module page when needed.
+- Notes:
+  - This pass stayed within the contribution detail route section and did not yet implement the later module-by-module verification section.
+- Known issues:
+  - There is still no dedicated backend activity-list endpoint per module; the new detail route currently reuses the existing history endpoints with frontend filtering.
+- Next suggested task:
+  - Create the contribution detail route loader and page structure.
+
+- Completed task: Created the contribution detail route loader and page structure.
+- Changed files:
+  - `frontend/app/routes/dashboard-contribution-detail.tsx`
+  - `frontend/app/routes/dashboard.tsx`
+  - `frontend/app/routes.ts`
+  - `ai/tasks/004-dashboard-revamp-and-module-contribution-views.tasks.md`
+  - `ai/logs/004-dashboard-revamp-and-module-contribution-views.log.md`
+- Summary of changes:
+  - Added a new generic route module `frontend/app/routes/dashboard-contribution-detail.tsx`.
+  - Built a loader that validates the module param, fetches the module contribution response, fetches the relevant module history list, and filters records into the displayed contribution range.
+  - Added a shared route layout with dashboard back navigation, module navigation, a top graph section, and a lower activity-list section.
+- Notes:
+  - The loader uses the existing list endpoints for `sholat`, `puasa`, `keuangan`, `olahraga`, and `jurnal` so the implementation stays aligned with the current API surface.
+- Known issues:
+  - Because the reused list endpoints are generic history endpoints with a limit, the displayed activity list may not represent every older record in very dense data sets.
+- Next suggested task:
+  - Keep the selected module contribution graph visible at the top of the detail page.
+
+- Completed task: Kept the selected module contribution graph visible at the top of the detail page.
+- Changed files:
+  - `frontend/app/routes/dashboard-contribution-detail.tsx`
+  - `ai/tasks/004-dashboard-revamp-and-module-contribution-views.tasks.md`
+  - `ai/logs/004-dashboard-revamp-and-module-contribution-views.log.md`
+- Summary of changes:
+  - Reused the shared `ContributionGraph` component as the first content block in the new detail route.
+  - Passed the selected module's own contribution series plus the real date boundaries into the graph so the same visual context from the dashboard stays visible on the detail page.
+  - Added module-specific title and explanatory copy above the detail graph.
+- Notes:
+  - The detail page intentionally preserves the contribution visual before showing record-level data so the user does not lose the summary context.
+- Known issues:
+  - The graph is shown correctly at the top, but cells are not interactive yet because cell-level interaction is outside this section.
+- Next suggested task:
+  - Add the related activity or record list below the graph.
+
+- Completed task: Added the related activity or record list below the graph.
+- Changed files:
+  - `frontend/app/routes/dashboard-contribution-detail.tsx`
+  - `ai/tasks/004-dashboard-revamp-and-module-contribution-views.tasks.md`
+  - `ai/logs/004-dashboard-revamp-and-module-contribution-views.log.md`
+- Summary of changes:
+  - Added a module-aware activity list section underneath the graph with separate renderers for Sholat, Puasa, Keuangan, Olahraga, and Jurnal.
+  - Reused existing record fields and links to the existing record detail pages for each module.
+  - Added empty-state handling when a module has no records in the displayed contribution range.
+- Notes:
+  - The activity list is filtered on the frontend using the contribution range boundaries returned by the backend.
+- Known issues:
+  - The detail list depends on the ordering and limit of the existing list endpoints and is not yet backed by a dedicated date-range query.
+- Next suggested task:
+  - Verify the detail route uses the correct module context and data.
+
+- Completed task: Verified the detail route uses the correct module context and data.
+- Changed files:
+  - `frontend/app/routes.ts`
+  - `frontend/app/routes/dashboard.tsx`
+  - `frontend/app/routes/dashboard-contribution-detail.tsx`
+  - `ai/tasks/004-dashboard-revamp-and-module-contribution-views.tasks.md`
+  - `ai/logs/004-dashboard-revamp-and-module-contribution-views.log.md`
+- Summary of changes:
+  - Verified that invalid route params are rejected through module-key validation in the loader.
+  - Verified that the selected module context drives the correct graph series, history endpoint, labels, and record-detail links.
+  - Re-ran frontend verification and confirmed the new contribution detail route passes typecheck together with the dashboard links and route registration.
+- Notes:
+  - Verification commands run in this section:
+    - `cd frontend && npm run typecheck`
+- Known issues:
+  - No browser-driven click-through verification was run yet for the new contribution detail routes.
+- Next suggested task:
+  - Verify Sholat contribution detail behavior and activity-list mapping.
+
+- Completed task: Reviewed the existing contribution graph component and confirmed what should be reused.
+- Changed files:
+  - `frontend/app/components/contribution-graph.tsx`
+  - `frontend/app/routes/dashboard.tsx`
+  - `ai/tasks/004-dashboard-revamp-and-module-contribution-views.tasks.md`
+  - `ai/logs/004-dashboard-revamp-and-module-contribution-views.log.md`
+- Summary of changes:
+  - Kept the existing graph's score-color legend, compact cell metaphor, and reusable card-level structure as the foundation for the next pass.
+  - Confirmed that the old generic auto-fill grid was the main piece that needed replacement because it only rendered returned activity days instead of a full calendar range.
+  - Reused the same `ContributionGraph` component rather than introducing a parallel graph implementation.
+- Notes:
+  - This section stayed focused on the shared graph component and did not begin contribution detail routes yet.
+- Known issues:
+  - The graph still depends on backend start and end dates being passed correctly by consuming routes.
+- Next suggested task:
+  - Update the contribution graph component so it can render module-level contribution views clearly.
+
+- Completed task: Updated the contribution graph component so it can render module-level contribution views clearly.
+- Changed files:
+  - `frontend/app/components/contribution-graph.tsx`
+  - `frontend/app/routes/dashboard.tsx`
+  - `ai/tasks/004-dashboard-revamp-and-module-contribution-views.tasks.md`
+  - `ai/logs/004-dashboard-revamp-and-module-contribution-views.log.md`
+- Summary of changes:
+  - Reworked `ContributionGraph` so it now expands sparse backend activity data into a full calendar-day range using `startDate` and `endDate`.
+  - Grouped the rendered cells by month, with one month section per block and a dedicated day-cell grid inside each month.
+  - Updated the dashboard module cards to pass real range boundaries into the graph so each module now renders a calendar-aware contribution view.
+  - Preserved the existing intensity legend while giving the graph more explicit month-level context and per-month active-day summaries.
+- Notes:
+  - The new layout is intentionally month-grouped instead of cloning GitHub's exact strip layout.
+- Known issues:
+  - The graph currently treats the backend `endDate` as an exclusive boundary and converts it to an inclusive display label on the frontend.
+- Next suggested task:
+  - Verify the graph correctly represents one day per cell.
+
+- Completed task: Verified the graph correctly represents one day per cell.
+- Changed files:
+  - `frontend/app/components/contribution-graph.tsx`
+  - `frontend/app/routes/dashboard.tsx`
+  - `ai/tasks/004-dashboard-revamp-and-module-contribution-views.tasks.md`
+  - `ai/logs/004-dashboard-revamp-and-module-contribution-views.log.md`
+- Summary of changes:
+  - Added deterministic calendar-day expansion logic that creates exactly one rendered cell for each date in the contribution range.
+  - Mapped backend scores into a date-indexed lookup so missing days still render as zero-score cells instead of disappearing from the graph.
+  - Verified the updated graph passes frontend typecheck after the new calendar-building logic was introduced.
+- Notes:
+  - Verification in this section used source-level review of the date expansion logic plus `cd frontend && npm run typecheck`.
+- Known issues:
+  - No browser screenshot verification was run for individual cell counts in this pass.
+- Next suggested task:
+  - Verify the graph respects the real number of days in each month across the 12-month range.
+
+- Completed task: Verified the graph respects the real number of days in each month across the 12-month range.
+- Changed files:
+  - `frontend/app/components/contribution-graph.tsx`
+  - `frontend/app/routes/dashboard.tsx`
+  - `ai/tasks/004-dashboard-revamp-and-module-contribution-views.tasks.md`
+  - `ai/logs/004-dashboard-revamp-and-module-contribution-views.log.md`
+- Summary of changes:
+  - Grouped the expanded day list by real calendar month derived from UTC date-only values.
+  - Ensured each month section renders only the actual dates that exist in that month segment of the range instead of assuming fixed month lengths.
+  - Added month labels and per-month day counts so the rendered structure reflects the real calendar more clearly.
+- Notes:
+  - Because the backend route now defaults to a one-year window, the grouped month sections naturally support the planned 12-month dashboard cards.
+- Known issues:
+  - This pass does not yet add click-through behavior from cells or cards into a contribution detail route.
+- Next suggested task:
+  - Verify the contribution presentation stays understandable without copying GitHub exactly.
+
+- Completed task: Verified the contribution presentation stays understandable without copying GitHub exactly.
+- Changed files:
+  - `frontend/app/components/contribution-graph.tsx`
+  - `frontend/app/routes/dashboard.tsx`
+  - `ai/tasks/004-dashboard-revamp-and-module-contribution-views.tasks.md`
+  - `ai/logs/004-dashboard-revamp-and-module-contribution-views.log.md`
+- Summary of changes:
+  - Kept the contribution metaphor familiar through small colored day cells, but presented it as month-grouped cards with clear headings and counts instead of a GitHub clone.
+  - Preserved readable legends, day counts, and active-day summaries so the graph explains itself more directly inside the product's own visual language.
+  - Re-ran frontend typecheck and confirmed the shared graph updates integrate cleanly with the dashboard revamp.
+- Notes:
+  - Verification commands run in this section:
+    - `cd frontend && npm run typecheck`
+- Known issues:
+  - No browser-driven visual pass has been run yet, so final spacing and density judgment is still source-level only.
+- Next suggested task:
+  - Add frontend route registration for a module contribution detail page.
+
+- Completed task: Reviewed the current dashboard layout and identified which existing summary sections should no longer be primary.
+- Changed files:
+  - `frontend/app/routes/dashboard.tsx`
+  - `frontend/app/components/contribution-graph.tsx`
+  - `ai/tasks/004-dashboard-revamp-and-module-contribution-views.tasks.md`
+  - `ai/logs/004-dashboard-revamp-and-module-contribution-views.log.md`
+- Summary of changes:
+  - Replaced the old summary-card-first dashboard direction with a contribution-first content hierarchy.
+  - Removed the top summary-card grid, the shared combined contribution block, and the lower module summary grid from the primary dashboard structure.
+  - Kept the page shell and retained only lightweight quick-summary context so contribution cards now receive the main visual emphasis.
+- Notes:
+  - This pass intentionally kept the dashboard revamp scoped to the existing route instead of starting contribution detail pages.
+- Known issues:
+  - The dashboard now depends on the new module contribution endpoint and no longer uses the old combined contribution endpoint for its main layout.
+- Next suggested task:
+  - Refactor the dashboard route so module contribution views become the primary dashboard structure.
+
+- Completed task: Refactored the dashboard route so module contribution views become the primary dashboard structure.
+- Changed files:
+  - `frontend/app/routes/dashboard.tsx`
+  - `frontend/app/components/contribution-graph.tsx`
+  - `ai/tasks/004-dashboard-revamp-and-module-contribution-views.tasks.md`
+  - `ai/logs/004-dashboard-revamp-and-module-contribution-views.log.md`
+- Summary of changes:
+  - Updated the dashboard loader to consume `/api/dashboard/module-contributions` instead of centering the page around the older combined contribution response.
+  - Introduced a contribution-first dashboard layout with one top focus block, one compact quick-summary block, and a dedicated module-contribution grid underneath.
+  - Added dashboard-local `ModuleContributionCard` and `QuickStat` building blocks so the page can render module cards without spilling the revamp into unrelated routes.
+  - Extended `ContributionGraph` with optional title and description props so the same graph can be reused inside dashboard contribution cards with module-specific copy.
+- Notes:
+  - The shared graph component was only extended enough to support the new dashboard layout and was not broadly redesigned yet.
+- Known issues:
+  - Dashboard contribution cards are not clickable to module-specific contribution detail pages yet because that belongs to a later section.
+- Next suggested task:
+  - Add a contribution section or card for Sholat on the dashboard.
+
+- Completed task: Added contribution sections or cards for Sholat, Puasa, Keuangan, Olahraga, and Jurnal on the dashboard.
+- Changed files:
+  - `frontend/app/routes/dashboard.tsx`
+  - `frontend/app/components/contribution-graph.tsx`
+  - `ai/tasks/004-dashboard-revamp-and-module-contribution-views.tasks.md`
+  - `ai/logs/004-dashboard-revamp-and-module-contribution-views.log.md`
+- Summary of changes:
+  - Rendered one contribution card for each MVP module using the backend-provided module contribution series.
+  - Added module-specific labels, descriptions, quick highlights, and links back to each module route so the cards feel distinct even before detail pages exist.
+  - Added empty-state handling per module so the dashboard still reads clearly when a specific module has no contribution history yet.
+  - Included Sholat, Puasa, Keuangan, Olahraga, and Jurnal in the visible dashboard contribution grid.
+- Notes:
+  - Keuangan now participates visually in the contribution-first dashboard through the backend transaction-count contribution support added earlier.
+- Known issues:
+  - The module cards still rely on the current contribution graph styling and have not yet been refined into a denser 12-month visual treatment.
+- Next suggested task:
+  - Verify the new dashboard still feels focused and not overloaded.
+
+- Completed task: Verified the new dashboard still feels focused and not overloaded.
+- Changed files:
+  - `frontend/app/routes/dashboard.tsx`
+  - `frontend/app/components/contribution-graph.tsx`
+  - `ai/tasks/004-dashboard-revamp-and-module-contribution-views.tasks.md`
+  - `ai/logs/004-dashboard-revamp-and-module-contribution-views.log.md`
+- Summary of changes:
+  - Kept the new dashboard hierarchy limited to one focus section, one quick-summary section, and one module contribution grid.
+  - Avoided reintroducing the old three-section stack of summary cards, shared contribution, and lower module summaries.
+  - Re-ran frontend verification and confirmed the updated dashboard passes typecheck.
+- Notes:
+  - Verification for this section used source-level review plus `cd frontend && npm run typecheck`.
+  - No browser-driven visual verification was run in this pass.
+- Known issues:
+  - The contribution graph itself is still visually generic and will likely need refinement in the next `Shared Contribution Graph` section.
+- Next suggested task:
+  - Review the existing contribution graph component and confirm what should be reused.
+
+- Completed task: Reviewed the current dashboard contribution response shape and identified the gaps for per-module contribution views.
+- Changed files:
+  - `backend/internal/db/dashboard_manual.go`
+  - `backend/internal/handlers/dashboard.go`
+  - `backend/internal/handlers/router.go`
+  - `backend/internal/handlers/router_test.go`
+  - `backend/internal/handlers/dashboard_integration_test.go`
+  - `ai/tasks/004-dashboard-revamp-and-module-contribution-views.tasks.md`
+  - `ai/logs/004-dashboard-revamp-and-module-contribution-views.log.md`
+- Summary of changes:
+  - Confirmed the existing combined contribution response was the main backend gap for feature `004`.
+  - Added backend support for module-separated contribution aggregation through a new query helper in `backend/internal/db/dashboard_manual.go`.
+  - Added a new dashboard handler response in `backend/internal/handlers/dashboard.go` that returns separate contribution series for `sholat`, `puasa`, `keuangan`, `olahraga`, and `jurnal`.
+  - Kept the older combined contribution endpoint intact so existing frontend behavior is not broken during this section.
+- Notes:
+  - This backend pass stayed focused on contribution support only and did not start the dashboard UI revamp yet.
+  - Finance contribution is now represented in the module contribution response by transaction count per day so the module can participate in contribution-first views.
+- Known issues:
+  - The legacy combined contribution endpoint still exists alongside the new module-aware endpoint because the frontend has not been migrated yet.
+- Next suggested task:
+  - Adjust backend contribution support only if the current API shape cannot support the required module-level dashboard views.
+
+- Completed task: Adjusted backend contribution support because the current API shape could not support the required module-level dashboard views.
+- Changed files:
+  - `backend/internal/db/dashboard_manual.go`
+  - `backend/internal/handlers/dashboard.go`
+  - `backend/internal/handlers/router.go`
+  - `backend/internal/handlers/router_test.go`
+  - `backend/internal/handlers/dashboard_integration_test.go`
+  - `ai/tasks/004-dashboard-revamp-and-module-contribution-views.tasks.md`
+  - `ai/logs/004-dashboard-revamp-and-module-contribution-views.log.md`
+- Summary of changes:
+  - Added a new route `GET /api/dashboard/module-contributions` in `backend/internal/handlers/router.go`.
+  - Added a new handler that supports module-separated contribution data across a 12-month-capable date range using `start_date` and `end_date`.
+  - Returned a stable ordered module payload so future frontend work can render per-module dashboard sections without first reshaping the backend response.
+  - Included finance in the new module contribution aggregation so all existing MVP modules now participate in the contribution-first backend support.
+- Notes:
+  - The new endpoint uses the same date-query validation style as the existing dashboard endpoints.
+  - The response is intentionally backend-only for now; no frontend route has been wired to consume it yet in this section.
+- Known issues:
+  - The new module contribution endpoint does not yet include filtered activity-list data for detail pages; this section only covered contribution support.
+- Next suggested task:
+  - Add or update backend verification for contribution aggregation if handler behavior changes.
+
+- Completed task: Added backend verification for contribution aggregation after the handler behavior changed.
+- Changed files:
+  - `backend/internal/handlers/router_test.go`
+  - `backend/internal/handlers/dashboard_integration_test.go`
+  - `ai/tasks/004-dashboard-revamp-and-module-contribution-views.tasks.md`
+  - `ai/logs/004-dashboard-revamp-and-module-contribution-views.log.md`
+- Summary of changes:
+  - Extended dashboard route validation coverage so the new module contribution endpoint rejects invalid dates and reversed date ranges.
+  - Added an integration test that seeds stored records and verifies the module contribution response returns the expected per-module scores.
+  - Verified finance contribution aggregation through the new response by asserting two transactions on the same day produce a score of `2`.
+- Notes:
+  - The aggregation test reuses the embedded PostgreSQL test setup already established for dashboard verification in this repo.
+- Known issues:
+  - The integration test currently verifies score aggregation and module separation, but it does not yet assert a full 12-month sparse calendar shape because the frontend has not started rendering that view yet.
+- Next suggested task:
+  - Verify route registration for any dashboard or contribution endpoint updates.
+
+- Completed task: Verified route registration for the dashboard contribution endpoint updates.
+- Changed files:
+  - `backend/internal/handlers/router.go`
+  - `backend/internal/handlers/router_test.go`
+  - `backend/internal/handlers/dashboard_integration_test.go`
+  - `ai/tasks/004-dashboard-revamp-and-module-contribution-views.tasks.md`
+  - `ai/logs/004-dashboard-revamp-and-module-contribution-views.log.md`
+- Summary of changes:
+  - Registered the new `/api/dashboard/module-contributions` endpoint in the central backend router.
+  - Verified the new route through request-based tests and the integration test suite.
+  - Re-ran backend verification and confirmed the handler package plus full backend test suite still pass.
+- Notes:
+  - Verification commands run in this section:
+    - `cd backend && go test ./internal/handlers/...`
+    - `cd backend && go test ./...`
+- Known issues:
+  - No frontend code consumes the new route yet, which is expected because this section was limited to backend contribution support.
+- Next suggested task:
+  - Review the current dashboard layout and identify which existing summary sections should no longer be primary.
+
+- Completed task: Confirmed whether the current backend contribution endpoint already supports per-module 12-month contribution data.
+- Changed files:
+  - `ai/tasks/004-dashboard-revamp-and-module-contribution-views.tasks.md`
+  - `ai/logs/004-dashboard-revamp-and-module-contribution-views.log.md`
+- Summary of changes:
+  - Reviewed `backend/sql/dashboard.sql` and `backend/internal/handlers/dashboard.go` to inspect the current contribution query and response shape.
+  - Confirmed that the current `ListContributionDays` query merges sholat, puasa, olahraga, and jurnal activity into one combined date-based score stream.
+  - Confirmed that the current contribution endpoint does not include per-module separation, does not include finance activity at all, and defaults to a rolling range of roughly 90 days instead of a 12-month module-specific view.
+  - Confirmed that the current backend contribution endpoint is not sufficient yet for the planned dashboard requirement of separate per-module 12-month contribution views.
+- Notes:
+  - No application code was changed because this checklist item was a discovery and capability-assessment step.
+  - A later backend task will need to decide whether to extend the current endpoint or add a clearer module-aware contribution shape.
+- Known issues:
+  - The current contribution API shape is combined, partial across modules, and shorter in range than the planned feature requires.
+- Next suggested task:
+  - Confirm which module record data should appear below each contribution detail view.
+
+- Completed task: Confirmed which module record data should appear below each contribution detail view.
+- Changed files:
+  - `ai/tasks/004-dashboard-revamp-and-module-contribution-views.tasks.md`
+  - `ai/logs/004-dashboard-revamp-and-module-contribution-views.log.md`
+- Summary of changes:
+  - Reviewed existing module list routes plus backend record models and handlers for Sholat, Puasa, Keuangan, Olahraga, and Jurnal.
+  - Confirmed that the contribution detail page should reuse the same lightweight record summaries that already make sense in current module history views instead of inventing a new record format.
+  - Confirmed the expected activity-list content per module:
+    - Sholat: record date, completed prayer count, congregation count, and short notes context.
+    - Puasa: record date, fast type, completed status, sahur/iftar indicators, and short notes context.
+    - Keuangan: transaction date, transaction type, category, amount, and short notes context.
+    - Olahraga: record date, sport type, duration minutes, completed status, and short notes context.
+    - Jurnal: entry date, title, mood, tags, privacy flag if relevant, and short content preview.
+  - Confirmed that current list endpoints already provide enough base record fields for these activity summaries, even though later filtering by selected contribution period may still need dedicated backend or loader logic.
+- Notes:
+  - No application code was changed because this checklist item was still part of discovery and shared preparation.
+  - Reusing existing record shapes should keep the later detail-page implementation aligned with current module routes and avoid unnecessary new frontend data models.
+- Known issues:
+  - The current list endpoints are generic paginated history endpoints and are not yet filtered specifically for contribution-detail context or selected date ranges.
+- Next suggested task:
+  - Review the current dashboard contribution response shape and identify any gaps for per-module contribution views.
+
+- Completed task: Confirmed which current dashboard sections should be kept, reduced, or replaced for a contribution-first layout.
+- Changed files:
+  - `ai/tasks/004-dashboard-revamp-and-module-contribution-views.tasks.md`
+  - `ai/logs/004-dashboard-revamp-and-module-contribution-views.log.md`
+- Summary of changes:
+  - Reviewed the current dashboard composition in `frontend/app/routes/dashboard.tsx` together with `SummaryCard`, `ContributionGraph`, `EmptyState`, and `MainLayout`.
+  - Confirmed that the shared page shell in `MainLayout` should be kept because it already provides the correct page frame, sidebar behavior, and dashboard header structure.
+  - Confirmed that `ContributionGraph` should be kept as a starting point but reduced from being a single generic shared activity block and later reshaped into module-specific contribution views.
+  - Confirmed that the top summary-card grid should be reduced from the primary dashboard focus because it currently dominates the page and keeps contribution secondary.
+  - Confirmed that the journal side panel and lower module summary grid should be replaced or heavily reduced in a later task because they compete with the contribution-first direction and duplicate module-summary information.
+- Notes:
+  - No application code was changed because this checklist item was still a discovery and decision step.
+  - The current dashboard shell remains usable, but the main content hierarchy will need to shift so contribution sections become the primary visual structure.
+- Known issues:
+  - The dashboard currently gives more visual weight to summary cards and supporting blocks than to contribution views.
+- Next suggested task:
+  - Confirm whether the current backend contribution endpoint already supports per-module 12-month contribution data.
+
+- Completed task: Reviewed the current dashboard route, contribution graph component, dashboard handlers, and route registration that affect feature `004`.
+- Changed files:
+  - `ai/tasks/004-dashboard-revamp-and-module-contribution-views.tasks.md`
+  - `ai/logs/004-dashboard-revamp-and-module-contribution-views.log.md`
+- Summary of changes:
+  - Reviewed `frontend/app/routes/dashboard.tsx` and confirmed the current dashboard is still summary-card-first with a single shared contribution section.
+  - Reviewed `frontend/app/components/contribution-graph.tsx` and confirmed the current graph is a generic activity-intensity grid without module-specific grouping or navigation behavior.
+  - Reviewed `backend/internal/handlers/dashboard.go` and confirmed the current contribution endpoint returns one combined date-range graph instead of per-module 12-month contribution views.
+  - Reviewed `backend/internal/handlers/router.go` and `frontend/app/routes.ts` and confirmed there is no module contribution detail route registered yet.
+- Notes:
+  - No application code was changed because this checklist item is a review and discovery step only.
+  - The reviewed files give a clear baseline for the next task, which is deciding which current dashboard sections should be kept, reduced, or replaced.
+- Known issues:
+  - The current dashboard and backend contribution flow are not yet shaped around per-module contribution views.
+- Next suggested task:
+  - Confirm which current dashboard sections should be kept, reduced, or replaced for a contribution-first layout.
+
+- Completed task: Prepared feature workflow files.
+- Changed files:
+  - `ai/prompts/004-dashboard-revamp-and-module-contribution-views.prompt.md`
+  - `ai/plans/004-dashboard-revamp-and-module-contribution-views.plan.md`
+  - `ai/tasks/004-dashboard-revamp-and-module-contribution-views.tasks.md`
+  - `ai/logs/004-dashboard-revamp-and-module-contribution-views.log.md`
+  - `ai/reviews/004-dashboard-revamp-and-module-contribution-views.review.md`
+- Summary of changes:
+  - Converted the issue into a refined implementation prompt.
+  - Created the implementation plan for the dashboard revamp and module contribution views.
+  - Broke the plan into small actionable checklist tasks.
+  - Initialized the implementation log.
+  - Initialized the review file.
+- Notes:
+  - No application code was written.
+  - Implementation should start from the first unchecked task in `ai/tasks/004-dashboard-revamp-and-module-contribution-views.tasks.md`.
+  - The planned work follows `/ai/context/tech-stack.md` and the current repo structure that uses `backend/` plus `frontend/app/`.
+- Known issues:
+  - None yet. Implementation has not started.
+- Next suggested task:
+  - Review the current dashboard route, contribution graph component, dashboard handlers, and route registration that affect feature `004`.

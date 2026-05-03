@@ -2,6 +2,7 @@ import { type RouteConfig, index, route } from "@react-router/dev/routes";
 
 export default [
   index("routes/dashboard.tsx"),
+  route("dashboard/contributions/:module", "routes/dashboard-contribution-detail.tsx"),
   route("sholat", "routes/sholat.tsx"),
   route("sholat/:id", "routes/sholat-detail.tsx"),
   route("puasa", "routes/puasa.tsx"),

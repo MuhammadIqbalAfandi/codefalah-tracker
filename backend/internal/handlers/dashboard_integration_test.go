@@ -72,6 +72,41 @@ func TestDashboardSummaryReflectsStoredRecords(t *testing.T) {
 	}
 }
 
+func TestModuleContributionsReflectStoredRecords(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	database := openEmbeddedDatabase(t, ctx)
+	queries := trackerdb.New(database)
+	router := NewRouter(slog.New(slog.NewTextHandler(io.Discard, nil)), queries)
+	targetDate := time.Date(2026, time.May, 18, 0, 0, 0, 0, time.UTC)
+
+	seedDashboardRecords(t, ctx, database, targetDate)
+
+	response := fetchModuleContributions(
+		t,
+		router,
+		targetDate.AddDate(0, 0, -1),
+		targetDate.AddDate(0, 0, 2),
+	)
+
+	if response.StartDate != "2026-05-17" {
+		t.Fatalf("expected start date 2026-05-17, got %q", response.StartDate)
+	}
+	if response.EndDate != "2026-05-20" {
+		t.Fatalf("expected end date 2026-05-20, got %q", response.EndDate)
+	}
+	if len(response.Modules) != 5 {
+		t.Fatalf("expected 5 modules, got %d", len(response.Modules))
+	}
+
+	assertModuleContributionDay(t, response.Modules, "sholat", "2026-05-18", 4)
+	assertModuleContributionDay(t, response.Modules, "puasa", "2026-05-18", 1)
+	assertModuleContributionDay(t, response.Modules, "keuangan", "2026-05-18", 2)
+	assertModuleContributionDay(t, response.Modules, "olahraga", "2026-05-18", 1)
+	assertModuleContributionDay(t, response.Modules, "jurnal", "2026-05-18", 1)
+}
+
 func TestCreateSholatRecordDuplicateDateReturnsConflict(t *testing.T) {
 	t.Parallel()
 
@@ -293,6 +328,54 @@ func fetchDashboardSummary(t *testing.T, router http.Handler, targetDate time.Ti
 	}
 
 	return summary
+}
+
+func fetchModuleContributions(t *testing.T, router http.Handler, startDate time.Time, endDate time.Time) moduleContributionResponse {
+	t.Helper()
+
+	request := httptest.NewRequest(
+		http.MethodGet,
+		"/api/dashboard/module-contributions?start_date="+startDate.Format(time.DateOnly)+"&end_date="+endDate.Format(time.DateOnly),
+		nil,
+	)
+	response := httptest.NewRecorder()
+
+	router.ServeHTTP(response, request)
+
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected module contributions status %d, got %d with body %s", http.StatusOK, response.Code, response.Body.String())
+	}
+
+	var payload moduleContributionResponse
+	if err := json.NewDecoder(response.Body).Decode(&payload); err != nil {
+		t.Fatalf("decode module contributions: %v", err)
+	}
+
+	return payload
+}
+
+func assertModuleContributionDay(t *testing.T, modules []moduleContributionSeries, module string, date string, score int32) {
+	t.Helper()
+
+	for _, item := range modules {
+		if item.Module != module {
+			continue
+		}
+
+		for _, day := range item.Days {
+			if day.Date == date {
+				if day.Score != score {
+					t.Fatalf("expected module %s date %s score %d, got %d", module, date, score, day.Score)
+				}
+
+				return
+			}
+		}
+
+		t.Fatalf("expected module %s to contain date %s", module, date)
+	}
+
+	t.Fatalf("expected module %s to be present", module)
 }
 
 func freePort(t *testing.T) uint32 {
