@@ -7,6 +7,11 @@ import type { Route } from "./+types/jurnal-detail";
 import { MainLayout } from "~/components/main-layout";
 import { SaveFeedback } from "~/components/save-feedback";
 import { Button } from "~/components/ui/button";
+import { DateField } from "~/components/ui/date-field";
+import {
+  formatDateOnlyForDisplay,
+  normalizeDateInputValue,
+} from "~/lib/form-defaults";
 import { notifyTrackerDataChanged } from "~/lib/tracker-sync";
 import { ApiError, apiRequest } from "~/services/api-client";
 
@@ -132,12 +137,10 @@ export default function JurnalDetailRoute() {
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="grid gap-2 text-sm font-medium text-foreground">
                 Tanggal
-                <input
-                  type="date"
+                <DateField
                   name="entry_date"
-                  defaultValue={toDateInputValue(record.entry_date)}
+                  defaultValue={normalizeDateInputValue(record.entry_date)}
                   required
-                  className="h-9 rounded-md border border-input bg-background px-3 text-sm"
                 />
               </label>
               <label className="grid gap-2 text-sm font-medium text-foreground">
@@ -225,14 +228,6 @@ export default function JurnalDetailRoute() {
   );
 }
 
-function toDateInputValue(value: string) {
-  return value.slice(0, 10);
-}
-
 function formatRecordDate(value: string) {
-  return new Intl.DateTimeFormat("id-ID", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  }).format(new Date(value));
+  return formatDateOnlyForDisplay(value);
 }

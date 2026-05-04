@@ -96,6 +96,12 @@ func TestModuleContributionsReflectStoredRecords(t *testing.T) {
 	if response.EndDate != "2026-05-20" {
 		t.Fatalf("expected end date 2026-05-20, got %q", response.EndDate)
 	}
+	if len(response.AvailableYears) == 0 {
+		t.Fatalf("expected available years to be present")
+	}
+	if response.AvailableYears[0] != 2026 {
+		t.Fatalf("expected first available year 2026, got %d", response.AvailableYears[0])
+	}
 	if len(response.Modules) != 5 {
 		t.Fatalf("expected 5 modules, got %d", len(response.Modules))
 	}
@@ -105,6 +111,17 @@ func TestModuleContributionsReflectStoredRecords(t *testing.T) {
 	assertModuleContributionDay(t, response.Modules, "keuangan", "2026-05-18", 2)
 	assertModuleContributionDay(t, response.Modules, "olahraga", "2026-05-18", 1)
 	assertModuleContributionDay(t, response.Modules, "jurnal", "2026-05-18", 1)
+}
+
+func TestTodayInLocationUsesJakartaCalendarDate(t *testing.T) {
+	t.Parallel()
+
+	now := time.Date(2026, time.May, 3, 18, 30, 0, 0, time.UTC)
+	date := todayInLocation(now, jakartaLocation)
+
+	if date.Format(time.DateOnly) != "2026-05-04" {
+		t.Fatalf("expected Jakarta-local date 2026-05-04, got %q", date.Format(time.DateOnly))
+	}
 }
 
 func TestCreateSholatRecordDuplicateDateReturnsConflict(t *testing.T) {
@@ -282,6 +299,12 @@ func seedDashboardRecords(t *testing.T, ctx context.Context, database *sql.DB, t
 				transaction_date, transaction_type, category, amount, notes
 			) VALUES ($1, $2, $3, $4, $5)`,
 			args: []any{targetDate.AddDate(0, -1, 0), "income", "old", "9999.00", "previous month ignored"},
+		},
+		{
+			statement: `INSERT INTO journal_entries (
+				entry_date, title, content, mood, tags, is_private
+			) VALUES ($1, $2, $3, $4, $5, $6)`,
+			args: []any{time.Date(2024, time.December, 20, 0, 0, 0, 0, time.UTC), "Older year", "Contribution year source", "steady", "archive", false},
 		},
 		{
 			statement: `INSERT INTO sport_records (

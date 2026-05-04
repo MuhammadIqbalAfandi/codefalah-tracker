@@ -13,9 +13,15 @@ import type { Route } from "./+types/dashboard-contribution-detail";
 import { ContributionGraph } from "~/components/contribution-graph";
 import { EmptyState } from "~/components/empty-state";
 import { MainLayout } from "~/components/main-layout";
+import { type ModuleKey } from "~/lib/dashboard-contribution";
+import {
+  formatDateOnlyForDisplay,
+  formatCurrencyForDisplay,
+  getTodayDateInputValue,
+  parseDateOnly,
+} from "~/lib/form-defaults";
+import { useLocale } from "~/lib/localization";
 import { ApiError, apiRequest } from "~/services/api-client";
-
-type ModuleKey = "sholat" | "puasa" | "keuangan" | "olahraga" | "jurnal";
 
 type ModuleContributionResponse = {
   start_date: string;
@@ -272,13 +278,17 @@ function filterRecordsForContributionDetail(
 export default function DashboardContributionDetailRoute() {
   const { module, label, description, graph, startDate, endDate, records } =
     useLoaderData<typeof loader>();
+  const { language } = useLocale();
+  const isEnglish = language === "en";
   const config = moduleConfigs[module];
   const Icon = config.icon;
+  const initialMonthKey = resolveInitialMonthKey(startDate, endDate);
+  const localizedLabel = getModuleLabel(module, language);
 
   return (
     <MainLayout
-      title={`Contribution ${label}`}
-      description={description}
+      title={isEnglish ? `${localizedLabel} Contribution` : `Contribution ${localizedLabel}`}
+      description={getModuleDescription(module, language) ?? description}
       actions={
         <div className="flex flex-wrap items-center gap-3">
           <Link
@@ -286,13 +296,13 @@ export default function DashboardContributionDetailRoute() {
             className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
           >
             <ArrowLeft className="size-4" aria-hidden="true" />
-            Kembali ke dashboard
+            {isEnglish ? "Back to dashboard" : "Kembali ke dashboard"}
           </Link>
           <Link
             to={config.moduleHref}
             className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
           >
-            Buka module {label}
+            {isEnglish ? `Open ${localizedLabel}` : `Buka module ${localizedLabel}`}
             <ArrowRight className="size-4" aria-hidden="true" />
           </Link>
         </div>
@@ -301,11 +311,21 @@ export default function DashboardContributionDetailRoute() {
       <div className="grid min-w-0 gap-4">
         <section className="min-w-0 overflow-hidden rounded-3xl border border-border bg-card p-4 shadow-sm sm:p-5">
           <ContributionGraph
-            title={`Contribution ${label} 12 bulan terakhir`}
-            description={`Graph tetap ditampilkan di atas agar pola kontribusi ${label.toLowerCase()} tetap terlihat saat membaca daftar aktivitas di bawahnya.`}
+            module={module}
+            title={
+              isEnglish
+                ? `${localizedLabel} contribution in the last 12 months`
+                : `Contribution ${localizedLabel} 12 bulan terakhir`
+            }
+            description={
+              isEnglish
+                ? `The graph is automatically directed to the most relevant month so the ${localizedLabel.toLowerCase()} contribution pattern is easier to read.`
+                : `Graph langsung diarahkan ke bulan yang paling relevan supaya pola kontribusi ${localizedLabel.toLowerCase()} lebih cepat terbaca.`
+            }
             days={graph.days}
             startDate={startDate}
             endDate={endDate}
+            initialMonthKey={initialMonthKey}
           />
         </section>
 
@@ -314,19 +334,19 @@ export default function DashboardContributionDetailRoute() {
             <div className="min-w-0">
               <div className="inline-flex items-center gap-2 rounded-full bg-muted px-3 py-1 text-xs font-medium text-muted-foreground">
                 <Icon className="size-3.5" aria-hidden="true" />
-                Aktivitas terkait
+                {isEnglish ? "Related activity" : "Aktivitas terkait"}
               </div>
               <h2 className="mt-3 text-lg font-semibold text-foreground">
-                Daftar aktivitas {label}
+                {isEnglish ? `${localizedLabel} activity list` : `Daftar aktivitas ${localizedLabel}`}
               </h2>
               <p className="mt-1 text-sm text-muted-foreground">
-                Aktivitas di bawah ini disaring mengikuti hari aktif yang
-                benar-benar membentuk contribution graph pada rentang yang
-                sedang ditampilkan.
+                {isEnglish
+                  ? "The activities below are filtered to the active days that actually form the contribution graph in the currently visible range."
+                  : "Aktivitas di bawah ini disaring mengikuti hari aktif yang benar-benar membentuk contribution graph pada rentang yang sedang ditampilkan."}
               </p>
             </div>
             <span className="rounded-full bg-muted px-3 py-1 text-xs text-muted-foreground">
-              {records.length} item
+              {records.length} {isEnglish ? "items" : "item"}
             </span>
           </div>
 
@@ -334,8 +354,16 @@ export default function DashboardContributionDetailRoute() {
             {records.length === 0 ? (
               <EmptyState
                 icon={Icon}
-                title={`Belum ada aktivitas ${label.toLowerCase()} pada rentang ini`}
-                description="Saat ada record yang masuk ke rentang contribution ini, detail aktivitasnya akan muncul di bawah graph."
+                title={
+                  isEnglish
+                    ? `No ${localizedLabel.toLowerCase()} activity in this range`
+                    : `Belum ada aktivitas ${localizedLabel.toLowerCase()} pada rentang ini`
+                }
+                description={
+                  isEnglish
+                    ? "When a record enters this contribution range, its activity details will appear below the graph."
+                    : "Saat ada record yang masuk ke rentang contribution ini, detail aktivitasnya akan muncul di bawah graph."
+                }
               />
             ) : (
               <div className="grid gap-3">
@@ -344,6 +372,7 @@ export default function DashboardContributionDetailRoute() {
                     key={`${module}-${record.id}`}
                     module={module}
                     record={record}
+                    language={language}
                   />
                 ))}
               </div>
@@ -358,44 +387,49 @@ export default function DashboardContributionDetailRoute() {
 function ActivityCard({
   module,
   record,
+  language,
 }: {
   module: ModuleKey;
   record: ContributionRecord;
+  language: "id" | "en";
 }) {
   switch (module) {
     case "sholat":
-      return renderSholatActivity(record as SholatRecord);
+      return renderSholatActivity(record as SholatRecord, language);
     case "puasa":
-      return renderPuasaActivity(record as PuasaRecord);
+      return renderPuasaActivity(record as PuasaRecord, language);
     case "keuangan":
-      return renderFinanceActivity(record as FinanceTransaction);
+      return renderFinanceActivity(record as FinanceTransaction, language);
     case "olahraga":
-      return renderSportActivity(record as SportRecord);
+      return renderSportActivity(record as SportRecord, language);
     case "jurnal":
-      return renderJournalActivity(record as JournalEntry);
+      return renderJournalActivity(record as JournalEntry, language);
     default:
       return null;
   }
 }
 
-function renderSholatActivity(record: SholatRecord) {
+function renderSholatActivity(record: SholatRecord, language: "id" | "en") {
+  const isEnglish = language === "en";
   return (
     <article className="rounded-2xl border border-border p-4">
       <div className="flex items-start justify-between gap-3">
         <div>
           <h3 className="text-sm font-semibold text-foreground">
-            {formatRecordDate(record.record_date)}
+            {formatRecordDate(record.record_date, language)}
           </h3>
           <p className="mt-1 text-sm text-muted-foreground">
-            {countCompletedPrayers(record)}/5 sholat tercatat · berjamaah{" "}
-            {record.congregation_count} kali
+            {countCompletedPrayers(record)}/5{" "}
+            {isEnglish ? "prayers recorded" : "sholat tercatat"} ·{" "}
+            {isEnglish ? "congregation" : "berjamaah"} {record.congregation_count}{" "}
+            {isEnglish ? "times" : "kali"}
           </p>
         </div>
         <Link
           to={`/sholat/${record.id}`}
           className="text-xs font-medium text-foreground underline-offset-4 hover:underline"
         >
-          Lihat record
+          {isEnglish ? "View record" : "Lihat record"}
         </Link>
       </div>
       {record.notes ? (
@@ -407,7 +441,8 @@ function renderSholatActivity(record: SholatRecord) {
   );
 }
 
-function renderPuasaActivity(record: PuasaRecord) {
+function renderPuasaActivity(record: PuasaRecord, language: "id" | "en") {
+  const isEnglish = language === "en";
   return (
     <article className="rounded-2xl border border-border p-4">
       <div className="flex items-start justify-between gap-3">
@@ -416,17 +451,23 @@ function renderPuasaActivity(record: PuasaRecord) {
             {record.fast_type}
           </h3>
           <p className="mt-1 text-sm text-muted-foreground">
-            {formatRecordDate(record.record_date)} ·{" "}
-            {record.completed ? "Selesai" : "Belum selesai"} ·{" "}
-            {record.sahur ? "Sahur" : "Tanpa sahur"} ·{" "}
-            {record.iftar ? "Berbuka tercatat" : "Berbuka belum tercatat"}
+            {formatRecordDate(record.record_date, language)} ·{" "}
+            {record.completed ? (isEnglish ? "Completed" : "Selesai") : isEnglish ? "Not completed" : "Belum selesai"} ·{" "}
+            {record.sahur ? "Sahur" : isEnglish ? "No sahur" : "Tanpa sahur"} ·{" "}
+            {record.iftar
+              ? isEnglish
+                ? "Iftar recorded"
+                : "Berbuka tercatat"
+              : isEnglish
+                ? "Iftar not recorded"
+                : "Berbuka belum tercatat"}
           </p>
         </div>
         <Link
           to={`/puasa/${record.id}`}
           className="text-xs font-medium text-foreground underline-offset-4 hover:underline"
         >
-          Lihat record
+          {isEnglish ? "View record" : "Lihat record"}
         </Link>
       </div>
       {record.notes ? (
@@ -438,7 +479,11 @@ function renderPuasaActivity(record: PuasaRecord) {
   );
 }
 
-function renderFinanceActivity(record: FinanceTransaction) {
+function renderFinanceActivity(
+  record: FinanceTransaction,
+  language: "id" | "en",
+) {
+  const isEnglish = language === "en";
   return (
     <article className="rounded-2xl border border-border p-4">
       <div className="flex items-start justify-between gap-3">
@@ -447,16 +492,22 @@ function renderFinanceActivity(record: FinanceTransaction) {
             {record.category}
           </h3>
           <p className="mt-1 text-sm text-muted-foreground">
-            {formatRecordDate(record.transaction_date)} ·{" "}
-            {record.transaction_type === "income" ? "Pemasukan" : "Pengeluaran"}{" "}
-            · {formatCurrency(record.amount)}
+            {formatRecordDate(record.transaction_date, language)} ·{" "}
+            {record.transaction_type === "income"
+              ? isEnglish
+                ? "Income"
+                : "Pemasukan"
+              : isEnglish
+                ? "Expense"
+                : "Pengeluaran"}{" "}
+            · {formatCurrency(record.amount, language)}
           </p>
         </div>
         <Link
           to={`/keuangan/${record.id}`}
           className="text-xs font-medium text-foreground underline-offset-4 hover:underline"
         >
-          Lihat record
+          {isEnglish ? "View record" : "Lihat record"}
         </Link>
       </div>
       {record.notes ? (
@@ -468,7 +519,8 @@ function renderFinanceActivity(record: FinanceTransaction) {
   );
 }
 
-function renderSportActivity(record: SportRecord) {
+function renderSportActivity(record: SportRecord, language: "id" | "en") {
+  const isEnglish = language === "en";
   return (
     <article className="rounded-2xl border border-border p-4">
       <div className="flex items-start justify-between gap-3">
@@ -477,15 +529,16 @@ function renderSportActivity(record: SportRecord) {
             {record.sport_type}
           </h3>
           <p className="mt-1 text-sm text-muted-foreground">
-            {formatRecordDate(record.record_date)} · {record.duration_minutes}{" "}
-            menit · {record.completed ? "Selesai" : "Belum selesai"}
+            {formatRecordDate(record.record_date, language)} · {record.duration_minutes}{" "}
+            {isEnglish ? "minutes" : "menit"} ·{" "}
+            {record.completed ? (isEnglish ? "Completed" : "Selesai") : isEnglish ? "Not completed" : "Belum selesai"}
           </p>
         </div>
         <Link
           to={`/olahraga/${record.id}`}
           className="text-xs font-medium text-foreground underline-offset-4 hover:underline"
         >
-          Lihat record
+          {isEnglish ? "View record" : "Lihat record"}
         </Link>
       </div>
       {record.notes ? (
@@ -497,7 +550,8 @@ function renderSportActivity(record: SportRecord) {
   );
 }
 
-function renderJournalActivity(record: JournalEntry) {
+function renderJournalActivity(record: JournalEntry, language: "id" | "en") {
+  const isEnglish = language === "en";
   return (
     <article className="rounded-2xl border border-border p-4">
       <div className="flex items-start justify-between gap-3">
@@ -506,17 +560,17 @@ function renderJournalActivity(record: JournalEntry) {
             {record.title}
           </h3>
           <p className="mt-1 text-sm text-muted-foreground">
-            {formatRecordDate(record.entry_date)}
+            {formatRecordDate(record.entry_date, language)}
             {record.mood ? ` · ${record.mood}` : ""}
             {record.tags ? ` · ${record.tags}` : ""}
-            {record.is_private ? " · Private" : ""}
+            {record.is_private ? ` · ${isEnglish ? "Private" : "Privat"}` : ""}
           </p>
         </div>
         <Link
           to={`/jurnal/${record.id}`}
           className="text-xs font-medium text-foreground underline-offset-4 hover:underline"
         >
-          Lihat record
+          {isEnglish ? "View record" : "Lihat record"}
         </Link>
       </div>
       <p className="mt-3 text-sm leading-6 text-muted-foreground">
@@ -541,6 +595,21 @@ function getRecordDate(module: ModuleKey, record: ContributionRecord) {
   }
 }
 
+function resolveInitialMonthKey(startDate: string, endDate: string) {
+  const today = getTodayDateInputValue();
+  if (today >= startDate && today < endDate) {
+    return today.slice(0, 7);
+  }
+
+  const inclusiveEnd = parseDateOnly(endDate);
+  if (!inclusiveEnd) {
+    return undefined;
+  }
+
+  inclusiveEnd.setUTCDate(inclusiveEnd.getUTCDate() - 1);
+  return inclusiveEnd.toISOString().slice(0, 7);
+}
+
 function isModuleKey(value: string | undefined): value is ModuleKey {
   return (
     value === "sholat" ||
@@ -551,12 +620,8 @@ function isModuleKey(value: string | undefined): value is ModuleKey {
   );
 }
 
-function formatRecordDate(value: string) {
-  return new Intl.DateTimeFormat("id-ID", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  }).format(new Date(value));
+function formatRecordDate(value: string, language: "id" | "en") {
+  return formatDateOnlyForDisplay(value, undefined, language);
 }
 
 function countCompletedPrayers(record: SholatRecord) {
@@ -569,15 +634,69 @@ function countCompletedPrayers(record: SholatRecord) {
   ].filter(Boolean).length;
 }
 
-function formatCurrency(value: string) {
-  const amount = Number.parseFloat(value);
-  return new Intl.NumberFormat("id-ID", {
-    style: "currency",
-    currency: "IDR",
+function formatCurrency(value: string, language: "id" | "en") {
+  return formatCurrencyForDisplay(value, language, {
     maximumFractionDigits: 0,
-  }).format(Number.isFinite(amount) ? amount : 0);
+  });
 }
 
 function truncateContent(value: string) {
   return value.length > 180 ? `${value.slice(0, 180)}...` : value;
+}
+
+function getModuleLabel(module: ModuleKey, language: "id" | "en") {
+  if (language === "en") {
+    switch (module) {
+      case "sholat":
+        return "Prayer";
+      case "puasa":
+        return "Fasting";
+      case "keuangan":
+        return "Finance";
+      case "olahraga":
+        return "Workout";
+      case "jurnal":
+        return "Journal";
+    }
+  }
+
+  switch (module) {
+    case "sholat":
+      return "Sholat";
+    case "puasa":
+      return "Puasa";
+    case "keuangan":
+      return "Keuangan";
+    case "olahraga":
+      return "Olahraga";
+    case "jurnal":
+      return "Jurnal";
+  }
+}
+
+function getModuleDescription(module: ModuleKey, language: "id" | "en") {
+  const isEnglish = language === "en";
+
+  switch (module) {
+    case "sholat":
+      return isEnglish
+        ? "Prayer contribution detail links the contribution pattern with the worship records that are already saved."
+        : "Detail contribution sholat menautkan pola kontribusi dengan catatan ibadah yang sudah tersimpan.";
+    case "puasa":
+      return isEnglish
+        ? "Fasting contribution detail shows the relationship between active days and the fasting records that were saved."
+        : "Detail contribution puasa menampilkan keterkaitan antara hari aktif dan record puasa yang tercatat.";
+    case "keuangan":
+      return isEnglish
+        ? "Finance contribution detail shows the transactions that form the daily logging pattern."
+        : "Detail contribution keuangan memperlihatkan transaksi yang membentuk pola kontribusi pencatatan harian.";
+    case "olahraga":
+      return isEnglish
+        ? "Workout contribution detail clarifies the relationship between workout days and the saved activity records."
+        : "Detail contribution olahraga memperjelas hubungan antara hari latihan dan catatan aktivitas yang tersimpan.";
+    case "jurnal":
+      return isEnglish
+        ? "Journal contribution detail helps read writing days together with the entries that form the contribution pattern."
+        : "Detail contribution jurnal membantu melihat hari menulis beserta entri yang membentuk pola kontribusi.";
+  }
 }

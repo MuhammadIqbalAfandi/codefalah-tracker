@@ -7,6 +7,11 @@ import type { Route } from "./+types/puasa-detail";
 import { MainLayout } from "~/components/main-layout";
 import { SaveFeedback } from "~/components/save-feedback";
 import { Button } from "~/components/ui/button";
+import { DateField } from "~/components/ui/date-field";
+import {
+  formatDateOnlyForDisplay,
+  normalizeDateInputValue,
+} from "~/lib/form-defaults";
 import { notifyTrackerDataChanged } from "~/lib/tracker-sync";
 import { ApiError, apiRequest } from "~/services/api-client";
 
@@ -127,11 +132,10 @@ export default function PuasaDetailRoute() {
             ) : null}
             <label className="grid gap-2 text-sm font-medium text-foreground">
               Tanggal
-              <input
-                type="date"
-                value={toDateInputValue(record.record_date)}
+              <DateField
+                value={normalizeDateInputValue(record.record_date)}
                 disabled
-                className="h-9 rounded-md border border-input bg-muted px-3 text-sm text-muted-foreground"
+                helperText="Tanggal puasa dikunci agar kontribusi hari itu tidak bergeser."
               />
             </label>
             <label className="grid gap-2 text-sm font-medium text-foreground">
@@ -207,14 +211,6 @@ export default function PuasaDetailRoute() {
   );
 }
 
-function toDateInputValue(value: string) {
-  return value.slice(0, 10);
-}
-
 function formatRecordDate(value: string) {
-  return new Intl.DateTimeFormat("id-ID", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  }).format(new Date(value));
+  return formatDateOnlyForDisplay(value);
 }

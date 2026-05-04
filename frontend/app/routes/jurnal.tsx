@@ -7,7 +7,12 @@ import { EmptyState } from "~/components/empty-state";
 import { MainLayout } from "~/components/main-layout";
 import { SaveFeedback } from "~/components/save-feedback";
 import { Button } from "~/components/ui/button";
-import { getTodayDateInputValue } from "~/lib/form-defaults";
+import { DateField } from "~/components/ui/date-field";
+import {
+  formatDateOnlyForDisplay,
+  getTodayDateInputValue,
+} from "~/lib/form-defaults";
+import { useLocale } from "~/lib/localization";
 import { notifyTrackerDataChanged } from "~/lib/tracker-sync";
 import { apiRequest } from "~/services/api-client";
 
@@ -52,8 +57,11 @@ export async function loader(): Promise<LoaderData> {
 }
 
 export default function JurnalRoute() {
+  const { language } = useLocale();
+  const isEnglish = language === "en";
   const { history, apiError } = useLoaderData<typeof loader>();
   const revalidator = useRevalidator();
+  const [entryDate, setEntryDate] = useState(getTodayDateInputValue());
   const [saveState, setSaveState] = useState<{
     tone: "success" | "error";
     message: string;
@@ -80,11 +88,11 @@ export default function JurnalRoute() {
       });
 
       form.reset();
-      form.entry_date.value = getTodayDateInputValue();
+      setEntryDate(getTodayDateInputValue());
       form.is_private.checked = true;
       setSaveState({
         tone: "success",
-        message: "Jurnal berhasil disimpan.",
+        message: isEnglish ? "Journal entry saved successfully." : "Jurnal berhasil disimpan.",
       });
       notifyTrackerDataChanged();
       revalidator.revalidate();
@@ -93,7 +101,11 @@ export default function JurnalRoute() {
       setSaveState({
         tone: "error",
         message:
-          error instanceof Error ? error.message : "Gagal menyimpan jurnal.",
+          error instanceof Error
+            ? error.message
+            : isEnglish
+              ? "Failed to save journal entry."
+              : "Gagal menyimpan jurnal.",
       });
     }
   }
@@ -101,11 +113,17 @@ export default function JurnalRoute() {
   return (
     <MainLayout
       title="Jurnal Harian"
-      description="Catatan cerita, mood, tag, dan timeline pribadi."
+      description={
+        isEnglish
+          ? "Track your story, mood, tags, and personal timeline."
+          : "Catatan cerita, mood, tag, dan timeline pribadi."
+      }
     >
       {apiError ? (
         <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-200">
-          {apiError}
+          {isEnglish
+            ? "Journal timeline is not available from the backend yet. Data will appear here after the backend is ready."
+            : apiError}
         </div>
       ) : null}
 
@@ -114,7 +132,7 @@ export default function JurnalRoute() {
           <div className="flex items-center gap-2">
             <BookOpenText className="size-5 text-muted-foreground" aria-hidden="true" />
             <h2 className="text-base font-semibold text-foreground">
-              Tulis Jurnal
+              {isEnglish ? "Write Journal" : "Tulis Jurnal"}
             </h2>
           </div>
           <form className="mt-5 grid gap-4" onSubmit={handleSubmit}>
@@ -123,13 +141,12 @@ export default function JurnalRoute() {
             ) : null}
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="grid gap-2 text-sm font-medium text-foreground">
-                Tanggal
-                <input
-                  type="date"
+                {isEnglish ? "Date" : "Tanggal"}
+                <DateField
                   name="entry_date"
                   required
-                  defaultValue={getTodayDateInputValue()}
-                  className="h-9 rounded-md border border-input bg-background px-3 text-sm"
+                  value={entryDate}
+                  onChange={(event) => setEntryDate(event.currentTarget.value)}
                 />
               </label>
               <label className="grid gap-2 text-sm font-medium text-foreground">
@@ -142,16 +159,16 @@ export default function JurnalRoute() {
               </label>
             </div>
             <label className="grid gap-2 text-sm font-medium text-foreground">
-              Judul
+              {isEnglish ? "Title" : "Judul"}
               <input
                 name="title"
-                placeholder="Hari ini..."
+                placeholder={isEnglish ? "Today..." : "Hari ini..."}
                 required
                 className="h-9 rounded-md border border-input bg-background px-3 text-sm"
               />
             </label>
             <label className="grid gap-2 text-sm font-medium text-foreground">
-              Cerita
+              {isEnglish ? "Story" : "Cerita"}
               <textarea
                 name="content"
                 rows={7}
@@ -160,32 +177,38 @@ export default function JurnalRoute() {
               />
             </label>
             <label className="grid gap-2 text-sm font-medium text-foreground">
-              Tag
+              {isEnglish ? "Tags" : "Tag"}
               <input
                 name="tags"
-                placeholder="olahraga, refleksi"
+                placeholder={isEnglish ? "workout, reflection" : "olahraga, refleksi"}
                 className="h-9 rounded-md border border-input bg-background px-3 text-sm"
               />
             </label>
             <label className="flex h-9 items-center gap-3 text-sm font-medium text-foreground">
               <input type="checkbox" name="is_private" defaultChecked />
-              Private
+              {isEnglish ? "Private" : "Privat"}
             </label>
             <Button type="submit" className="w-fit">
               <Save aria-hidden="true" />
-              Simpan
+              {isEnglish ? "Save" : "Simpan"}
             </Button>
           </form>
         </section>
 
         <section className="rounded-lg border border-border bg-card p-4 shadow-sm">
-          <h2 className="text-base font-semibold text-foreground">Timeline</h2>
+          <h2 className="text-base font-semibold text-foreground">
+            {isEnglish ? "Timeline" : "Timeline"}
+          </h2>
           <div className="mt-4 grid gap-3">
             {history.length === 0 ? (
               <EmptyState
                 icon={BookOpenText}
-                title="Belum ada catatan jurnal"
-                description="Entri jurnal yang berhasil tersimpan akan muncul di timeline ini."
+                title={isEnglish ? "No journal entries yet" : "Belum ada catatan jurnal"}
+                description={
+                  isEnglish
+                    ? "Saved journal entries will appear in this timeline."
+                    : "Entri jurnal yang berhasil tersimpan akan muncul di timeline ini."
+                }
               />
             ) : (
               history.map((entry) => (
@@ -202,7 +225,7 @@ export default function JurnalRoute() {
                         {entry.title}
                       </Link>
                       <p className="mt-1 text-xs text-muted-foreground">
-                        {formatRecordDate(entry.entry_date)}
+                        {formatRecordDate(entry.entry_date, language)}
                         {entry.mood ? ` · ${entry.mood}` : ""}
                       </p>
                     </div>
@@ -214,7 +237,7 @@ export default function JurnalRoute() {
                     to={`/jurnal/${entry.id}`}
                     className="mt-3 inline-flex text-xs font-medium text-foreground underline-offset-4 hover:underline"
                   >
-                    Lihat detail
+                    {isEnglish ? "View detail" : "Lihat detail"}
                   </Link>
                 </article>
               ))
@@ -226,12 +249,8 @@ export default function JurnalRoute() {
   );
 }
 
-function formatRecordDate(value: string) {
-  return new Intl.DateTimeFormat("id-ID", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  }).format(new Date(value));
+function formatRecordDate(value: string, language: "id" | "en") {
+  return formatDateOnlyForDisplay(value, undefined, language);
 }
 
 function truncateContent(value: string) {

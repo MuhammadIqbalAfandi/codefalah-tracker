@@ -10,6 +10,11 @@ import (
 	trackerdb "codefalah-tracker/backend/internal/db"
 )
 
+var (
+	jakartaLocation = time.FixedZone("Asia/Jakarta", 7*60*60)
+	nowFunc         = time.Now
+)
+
 type dashboardSummaryResponse struct {
 	Date    string                  `json:"date"`
 	Sholat  dashboardSholatSummary  `json:"sholat"`
@@ -51,9 +56,10 @@ type contributionGraphResponse struct {
 }
 
 type moduleContributionResponse struct {
-	StartDate string                     `json:"start_date"`
-	EndDate   string                     `json:"end_date"`
-	Modules   []moduleContributionSeries `json:"modules"`
+	StartDate      string                     `json:"start_date"`
+	EndDate        string                     `json:"end_date"`
+	AvailableYears []int32                    `json:"available_years"`
+	Modules        []moduleContributionSeries `json:"modules"`
 }
 
 type contributionGraphDay struct {
@@ -68,7 +74,7 @@ type moduleContributionSeries struct {
 }
 
 func (h *RouterHandlers) getDashboardSummary(w http.ResponseWriter, r *http.Request) {
-	date, ok := parseOptionalDateQuery(w, r, "date", todayUTC())
+	date, ok := parseOptionalDateQuery(w, r, "date", todayJakarta())
 	if !ok {
 		return
 	}
@@ -137,7 +143,7 @@ func (h *RouterHandlers) getDashboardSummary(w http.ResponseWriter, r *http.Requ
 }
 
 func (h *RouterHandlers) getContributionGraph(w http.ResponseWriter, r *http.Request) {
-	defaultEnd := todayUTC().AddDate(0, 0, 1)
+	defaultEnd := todayJakarta().AddDate(0, 0, 1)
 	endDate, ok := parseOptionalDateQuery(w, r, "end_date", defaultEnd)
 	if !ok {
 		return
@@ -178,7 +184,7 @@ func (h *RouterHandlers) getContributionGraph(w http.ResponseWriter, r *http.Req
 }
 
 func (h *RouterHandlers) getModuleContributions(w http.ResponseWriter, r *http.Request) {
-	defaultEnd := todayUTC().AddDate(0, 0, 1)
+	defaultEnd := todayJakarta().AddDate(0, 0, 1)
 	endDate, ok := parseOptionalDateQuery(w, r, "end_date", defaultEnd)
 	if !ok {
 		return
@@ -228,11 +234,33 @@ func (h *RouterHandlers) getModuleContributions(w http.ResponseWriter, r *http.R
 		})
 	}
 
+	availableYears, err := h.queries.ListContributionYears(r.Context())
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "failed to get contribution years")
+		return
+	}
+
+	currentYear := int32(todayJakarta().Year())
+	if !containsYear(availableYears, currentYear) {
+		availableYears = append([]int32{currentYear}, availableYears...)
+	}
+
 	writeJSON(w, http.StatusOK, moduleContributionResponse{
-		StartDate: startDate.Format(time.DateOnly),
-		EndDate:   endDate.Format(time.DateOnly),
-		Modules:   modules,
+		StartDate:      startDate.Format(time.DateOnly),
+		EndDate:        endDate.Format(time.DateOnly),
+		AvailableYears: availableYears,
+		Modules:        modules,
 	})
+}
+
+func containsYear(years []int32, target int32) bool {
+	for _, year := range years {
+		if year == target {
+			return true
+		}
+	}
+
+	return false
 }
 
 func parseOptionalDateQuery(w http.ResponseWriter, r *http.Request, key string, fallback time.Time) (time.Time, bool) {
@@ -250,8 +278,13 @@ func parseOptionalDateQuery(w http.ResponseWriter, r *http.Request, key string, 
 	return normalizeDate(date), true
 }
 
-func todayUTC() time.Time {
-	return normalizeDate(time.Now().UTC())
+func todayJakarta() time.Time {
+	return todayInLocation(nowFunc(), jakartaLocation)
+}
+
+func todayInLocation(now time.Time, location *time.Location) time.Time {
+	localNow := now.In(location)
+	return normalizeDate(time.Date(localNow.Year(), localNow.Month(), localNow.Day(), 0, 0, 0, 0, time.UTC))
 }
 
 func normalizeDate(date time.Time) time.Time {

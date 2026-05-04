@@ -7,7 +7,17 @@ import { EmptyState } from "~/components/empty-state";
 import { MainLayout } from "~/components/main-layout";
 import { SaveFeedback } from "~/components/save-feedback";
 import { Button } from "~/components/ui/button";
-import { getTodayDateInputValue } from "~/lib/form-defaults";
+import { DateField } from "~/components/ui/date-field";
+import {
+  SelectField,
+  type SelectFieldOption,
+} from "~/components/ui/select-field";
+import {
+  formatDateOnlyForDisplay,
+  formatCurrencyForDisplay,
+  getTodayDateInputValue,
+} from "~/lib/form-defaults";
+import { useLocale } from "~/lib/localization";
 import { notifyTrackerDataChanged } from "~/lib/tracker-sync";
 import { apiRequest } from "~/services/api-client";
 
@@ -51,12 +61,32 @@ export async function loader(): Promise<LoaderData> {
 }
 
 export default function KeuanganRoute() {
+  const { language } = useLocale();
+  const isEnglish = language === "en";
   const { history, apiError } = useLoaderData<typeof loader>();
   const revalidator = useRevalidator();
+  const [transactionDate, setTransactionDate] = useState(getTodayDateInputValue());
+  const [transactionType, setTransactionType] = useState("expense");
   const [saveState, setSaveState] = useState<{
     tone: "success" | "error";
     message: string;
   } | null>(null);
+  const localizedTransactionTypeOptions: SelectFieldOption[] = [
+    {
+      value: "expense",
+      label: isEnglish ? "Expense" : "Pengeluaran",
+      description: isEnglish
+        ? "Use for spending, costs, and outgoing cash flow."
+        : "Dipakai untuk belanja, biaya, dan arus kas keluar.",
+    },
+    {
+      value: "income",
+      label: isEnglish ? "Income" : "Pemasukan",
+      description: isEnglish
+        ? "Use for salary, bonus, or incoming cash flow."
+        : "Dipakai untuk gaji, bonus, atau arus kas masuk.",
+    },
+  ];
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -79,11 +109,13 @@ export default function KeuanganRoute() {
       });
 
       form.reset();
-      form.transaction_date.value = getTodayDateInputValue();
-      form.transaction_type.value = "expense";
+      setTransactionDate(getTodayDateInputValue());
+      setTransactionType("expense");
       setSaveState({
         tone: "success",
-        message: "Transaksi keuangan berhasil disimpan.",
+        message: isEnglish
+          ? "Finance transaction saved successfully."
+          : "Transaksi keuangan berhasil disimpan.",
       });
       notifyTrackerDataChanged();
       revalidator.revalidate();
@@ -92,7 +124,11 @@ export default function KeuanganRoute() {
       setSaveState({
         tone: "error",
         message:
-          error instanceof Error ? error.message : "Gagal menyimpan transaksi keuangan.",
+          error instanceof Error
+            ? error.message
+            : isEnglish
+              ? "Failed to save finance transaction."
+              : "Gagal menyimpan transaksi keuangan.",
       });
     }
   }
@@ -100,11 +136,17 @@ export default function KeuanganRoute() {
   return (
     <MainLayout
       title="Keuangan Tracker"
-      description="Catatan pemasukan, pengeluaran, kategori, dan nominal."
+      description={
+        isEnglish
+          ? "Track income, expense, category, and amount."
+          : "Catatan pemasukan, pengeluaran, kategori, dan nominal."
+      }
     >
       {apiError ? (
         <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-200">
-          {apiError}
+          {isEnglish
+            ? "Finance history is not available from the backend yet. Data will appear here after the backend is ready."
+            : apiError}
         </div>
       ) : null}
 
@@ -113,7 +155,7 @@ export default function KeuanganRoute() {
           <div className="flex items-center gap-2">
             <WalletCards className="size-5 text-amber-600" aria-hidden="true" />
             <h2 className="text-base font-semibold text-foreground">
-              Transaksi
+              {isEnglish ? "Transaction" : "Transaksi"}
             </h2>
           </div>
           <form className="mt-5 grid gap-4" onSubmit={handleSubmit}>
@@ -122,37 +164,36 @@ export default function KeuanganRoute() {
             ) : null}
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="grid gap-2 text-sm font-medium text-foreground">
-                Tanggal
-                <input
-                  type="date"
+                {isEnglish ? "Date" : "Tanggal"}
+                <DateField
                   name="transaction_date"
                   required
-                  defaultValue={getTodayDateInputValue()}
-                  className="h-9 rounded-md border border-input bg-background px-3 text-sm"
+                  value={transactionDate}
+                  onChange={(event) =>
+                    setTransactionDate(event.currentTarget.value)
+                  }
                 />
               </label>
               <label className="grid gap-2 text-sm font-medium text-foreground">
-                Tipe
-                <select
+                {isEnglish ? "Type" : "Tipe"}
+                <SelectField
                   name="transaction_type"
-                  defaultValue="expense"
-                  className="h-9 rounded-md border border-input bg-background px-3 text-sm"
-                >
-                  <option value="expense">Pengeluaran</option>
-                  <option value="income">Pemasukan</option>
-                </select>
+                  value={transactionType}
+                  options={localizedTransactionTypeOptions}
+                  onValueChange={setTransactionType}
+                />
               </label>
               <label className="grid gap-2 text-sm font-medium text-foreground">
-                Kategori
+                {isEnglish ? "Category" : "Kategori"}
                 <input
                   name="category"
-                  placeholder="Makan"
+                  placeholder={isEnglish ? "Meals" : "Makan"}
                   required
                   className="h-9 rounded-md border border-input bg-background px-3 text-sm"
                 />
               </label>
               <label className="grid gap-2 text-sm font-medium text-foreground">
-                Jumlah
+                {isEnglish ? "Amount" : "Jumlah"}
                 <input
                   type="number"
                   name="amount"
@@ -166,7 +207,7 @@ export default function KeuanganRoute() {
               </label>
             </div>
             <label className="grid gap-2 text-sm font-medium text-foreground">
-              Catatan
+              {isEnglish ? "Notes" : "Catatan"}
               <textarea
                 name="notes"
                 rows={4}
@@ -175,28 +216,34 @@ export default function KeuanganRoute() {
             </label>
             <Button type="submit" className="w-fit">
               <Save aria-hidden="true" />
-              Simpan
+              {isEnglish ? "Save" : "Simpan"}
             </Button>
           </form>
         </section>
 
         <section className="rounded-lg border border-border bg-card p-4 shadow-sm">
-          <h2 className="text-base font-semibold text-foreground">Riwayat</h2>
+          <h2 className="text-base font-semibold text-foreground">
+            {isEnglish ? "History" : "Riwayat"}
+          </h2>
           <div className="mt-4">
             {history.length === 0 ? (
               <EmptyState
                 icon={WalletCards}
-                title="Belum ada transaksi"
-                description="Transaksi keuangan yang berhasil tersimpan akan muncul di tabel ini."
+                title={isEnglish ? "No transactions yet" : "Belum ada transaksi"}
+                description={
+                  isEnglish
+                    ? "Saved finance transactions will appear in this table."
+                    : "Transaksi keuangan yang berhasil tersimpan akan muncul di tabel ini."
+                }
               />
             ) : (
               <div className="overflow-hidden rounded-md border border-border">
                 <table className="w-full text-left text-sm">
                   <thead className="bg-muted text-muted-foreground">
                     <tr>
-                      <th className="px-3 py-2 font-medium">Tanggal</th>
-                      <th className="px-3 py-2 font-medium">Kategori</th>
-                      <th className="px-3 py-2 font-medium">Jumlah</th>
+                      <th className="px-3 py-2 font-medium">{isEnglish ? "Date" : "Tanggal"}</th>
+                      <th className="px-3 py-2 font-medium">{isEnglish ? "Category" : "Kategori"}</th>
+                      <th className="px-3 py-2 font-medium">{isEnglish ? "Amount" : "Jumlah"}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -207,13 +254,13 @@ export default function KeuanganRoute() {
                             to={`/keuangan/${item.id}`}
                             className="font-medium text-foreground underline-offset-4 hover:underline"
                           >
-                            {formatRecordDate(item.transaction_date)}
+                            {formatRecordDate(item.transaction_date, language)}
                           </Link>
                         </td>
                         <td className="px-3 py-2">{item.category}</td>
                         <td className="px-3 py-2">
                           {item.transaction_type === "income" ? "+" : "-"}
-                          {formatCurrency(item.amount)}
+                          {formatCurrency(item.amount, language)}
                         </td>
                       </tr>
                     ))}
@@ -228,19 +275,12 @@ export default function KeuanganRoute() {
   );
 }
 
-function formatRecordDate(value: string) {
-  return new Intl.DateTimeFormat("id-ID", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  }).format(new Date(value));
+function formatRecordDate(value: string, language: "id" | "en") {
+  return formatDateOnlyForDisplay(value, undefined, language);
 }
 
-function formatCurrency(value: string) {
-  const amount = Number.parseFloat(value);
-  return new Intl.NumberFormat("id-ID", {
-    style: "currency",
-    currency: "IDR",
+function formatCurrency(value: string, language: "id" | "en") {
+  return formatCurrencyForDisplay(value, language, {
     maximumFractionDigits: 2,
-  }).format(Number.isFinite(amount) ? amount : 0);
+  });
 }

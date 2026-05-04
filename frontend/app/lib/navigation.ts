@@ -7,35 +7,58 @@ import {
   Moon,
 } from "lucide-react";
 
-export const navigationItems = [
+const navigationConfig = [
   {
-    label: "Dashboard",
+    key: "dashboard",
     href: "/",
     icon: ChartNoAxesCombined,
   },
   {
-    label: "Sholat",
+    key: "sholat",
     href: "/sholat",
     icon: Landmark,
   },
   {
-    label: "Puasa",
+    key: "puasa",
     href: "/puasa",
     icon: Moon,
   },
   {
-    label: "Keuangan",
+    key: "keuangan",
     href: "/keuangan",
     icon: Activity,
   },
   {
-    label: "Olahraga",
+    key: "olahraga",
     href: "/olahraga",
     icon: Dumbbell,
   },
   {
-    label: "Jurnal",
+    key: "jurnal",
     href: "/jurnal",
     icon: BookOpenText,
   },
 ] as const;
+
+export const navigationItems = navigationConfig.map(({ key, ...item }) => ({
+  ...item,
+  label:
+    key === "dashboard"
+      ? "Dashboard"
+      : key === "sholat"
+        ? "Sholat"
+        : key === "puasa"
+          ? "Puasa"
+          : key === "keuangan"
+            ? "Keuangan"
+            : key === "olahraga"
+              ? "Olahraga"
+              : "Jurnal",
+}));
+
+export function getNavigationItems(labels: Record<string, string>) {
+  return navigationConfig.map(({ key, ...item }) => ({
+    ...item,
+    label: labels[key] ?? key,
+  }));
+}

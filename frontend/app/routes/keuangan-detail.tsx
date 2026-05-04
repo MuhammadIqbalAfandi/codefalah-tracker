@@ -7,6 +7,15 @@ import type { Route } from "./+types/keuangan-detail";
 import { MainLayout } from "~/components/main-layout";
 import { SaveFeedback } from "~/components/save-feedback";
 import { Button } from "~/components/ui/button";
+import { DateField } from "~/components/ui/date-field";
+import {
+  SelectField,
+  type SelectFieldOption,
+} from "~/components/ui/select-field";
+import {
+  formatDateOnlyForDisplay,
+  normalizeDateInputValue,
+} from "~/lib/form-defaults";
 import { notifyTrackerDataChanged } from "~/lib/tracker-sync";
 import { ApiError, apiRequest } from "~/services/api-client";
 
@@ -18,6 +27,19 @@ type FinanceTransaction = {
   amount: string;
   notes: string;
 };
+
+const transactionTypeOptions: SelectFieldOption[] = [
+  {
+    value: "expense",
+    label: "Pengeluaran",
+    description: "Arus kas keluar yang memengaruhi ringkasan bulan ini.",
+  },
+  {
+    value: "income",
+    label: "Pemasukan",
+    description: "Arus kas masuk yang menambah saldo bulan ini.",
+  },
+];
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -139,24 +161,19 @@ export default function KeuanganDetailRoute() {
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="grid gap-2 text-sm font-medium text-foreground">
                 Tanggal
-                <input
-                  type="date"
+                <DateField
                   name="transaction_date"
-                  defaultValue={toDateInputValue(record.transaction_date)}
+                  defaultValue={normalizeDateInputValue(record.transaction_date)}
                   required
-                  className="h-9 rounded-md border border-input bg-background px-3 text-sm"
                 />
               </label>
               <label className="grid gap-2 text-sm font-medium text-foreground">
                 Tipe
-                <select
+                <SelectField
                   name="transaction_type"
                   defaultValue={record.transaction_type}
-                  className="h-9 rounded-md border border-input bg-background px-3 text-sm"
-                >
-                  <option value="expense">Pengeluaran</option>
-                  <option value="income">Pemasukan</option>
-                </select>
+                  options={transactionTypeOptions}
+                />
               </label>
               <label className="grid gap-2 text-sm font-medium text-foreground">
                 Kategori
@@ -231,16 +248,8 @@ export default function KeuanganDetailRoute() {
   );
 }
 
-function toDateInputValue(value: string) {
-  return value.slice(0, 10);
-}
-
 function formatRecordDate(value: string) {
-  return new Intl.DateTimeFormat("id-ID", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  }).format(new Date(value));
+  return formatDateOnlyForDisplay(value);
 }
 
 function formatCurrency(value: string) {

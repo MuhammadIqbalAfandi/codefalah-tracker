@@ -2,12 +2,14 @@ import { Monitor, Moon, Sun } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { Button } from "~/components/ui/button";
+import { useTranslations } from "~/lib/localization";
 
 const themeStorageKey = "codefalah-theme";
 
 type ThemeMode = "light" | "dark";
 
 export function ThemeToggle() {
+  const t = useTranslations();
   const [theme, setTheme] = useState<ThemeMode>("light");
   const [isReady, setIsReady] = useState(false);
 
@@ -49,7 +51,11 @@ export function ThemeToggle() {
       ) : (
         <Monitor aria-hidden="true" />
       )}
-      {isReady ? (theme === "dark" ? "Dark mode" : "Light mode") : "Theme"}
+      {isReady
+        ? theme === "dark"
+          ? t.theme.darkMode
+          : t.theme.lightMode
+        : t.theme.theme}
     </Button>
   );
 }

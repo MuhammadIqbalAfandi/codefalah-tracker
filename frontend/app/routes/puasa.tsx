@@ -7,7 +7,12 @@ import { EmptyState } from "~/components/empty-state";
 import { MainLayout } from "~/components/main-layout";
 import { SaveFeedback } from "~/components/save-feedback";
 import { Button } from "~/components/ui/button";
-import { getTodayDateInputValue } from "~/lib/form-defaults";
+import { DateField } from "~/components/ui/date-field";
+import {
+  formatDateOnlyForDisplay,
+  getTodayDateInputValue,
+} from "~/lib/form-defaults";
+import { useLocale } from "~/lib/localization";
 import { notifyTrackerDataChanged } from "~/lib/tracker-sync";
 import { apiRequest } from "~/services/api-client";
 
@@ -52,8 +57,11 @@ export async function loader(): Promise<LoaderData> {
 }
 
 export default function PuasaRoute() {
+  const { language } = useLocale();
+  const isEnglish = language === "en";
   const { history, apiError } = useLoaderData<typeof loader>();
   const revalidator = useRevalidator();
+  const [recordDate, setRecordDate] = useState(getTodayDateInputValue());
   const [saveState, setSaveState] = useState<{
     tone: "success" | "error";
     message: string;
@@ -80,10 +88,10 @@ export default function PuasaRoute() {
       });
 
       form.reset();
-      form.record_date.value = getTodayDateInputValue();
+      setRecordDate(getTodayDateInputValue());
       setSaveState({
         tone: "success",
-        message: "Catatan puasa berhasil disimpan.",
+        message: isEnglish ? "Fasting record saved successfully." : "Catatan puasa berhasil disimpan.",
       });
       notifyTrackerDataChanged();
       revalidator.revalidate();
@@ -92,7 +100,11 @@ export default function PuasaRoute() {
       setSaveState({
         tone: "error",
         message:
-          error instanceof Error ? error.message : "Gagal menyimpan catatan puasa.",
+          error instanceof Error
+            ? error.message
+            : isEnglish
+              ? "Failed to save fasting record."
+              : "Gagal menyimpan catatan puasa.",
       });
     }
   }
@@ -100,11 +112,17 @@ export default function PuasaRoute() {
   return (
     <MainLayout
       title="Puasa Tracker"
-      description="Catatan jenis puasa, sahur, berbuka, dan status harian."
+      description={
+        isEnglish
+          ? "Track fasting type, pre-dawn meal, iftar, and daily completion."
+          : "Catatan jenis puasa, sahur, berbuka, dan status harian."
+      }
     >
       {apiError ? (
         <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-200">
-          {apiError}
+          {isEnglish
+            ? "Fasting history is not available from the backend yet. New data will appear after the backend connection is ready."
+            : apiError}
         </div>
       ) : null}
 
@@ -113,7 +131,7 @@ export default function PuasaRoute() {
           <div className="flex items-center gap-2">
             <Moon className="size-5 text-sky-600" aria-hidden="true" />
             <h2 className="text-base font-semibold text-foreground">
-              Catatan Puasa
+              {isEnglish ? "Fasting Record" : "Catatan Puasa"}
             </h2>
           </div>
           <form className="mt-5 grid gap-4" onSubmit={handleSubmit}>
@@ -122,41 +140,46 @@ export default function PuasaRoute() {
             ) : null}
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="grid gap-2 text-sm font-medium text-foreground">
-                Tanggal
-                <input
-                  type="date"
+                {isEnglish ? "Date" : "Tanggal"}
+                <DateField
                   name="record_date"
                   required
-                  defaultValue={getTodayDateInputValue()}
-                  className="h-9 rounded-md border border-input bg-background px-3 text-sm"
+                  value={recordDate}
+                  onChange={(event) => setRecordDate(event.currentTarget.value)}
                 />
               </label>
               <label className="grid gap-2 text-sm font-medium text-foreground">
-                Jenis puasa
+                {isEnglish ? "Fasting type" : "Jenis puasa"}
                 <input
                   name="fast_type"
-                  placeholder="Senin Kamis"
+                  placeholder={isEnglish ? "Monday Thursday" : "Senin Kamis"}
                   required
                   className="h-9 rounded-md border border-input bg-background px-3 text-sm"
                 />
               </label>
             </div>
             <div className="grid gap-2 sm:grid-cols-3">
-              {["Selesai", "Sahur", "Berbuka"].map((label) => (
+              {(isEnglish ? ["Completed", "Sahur", "Iftar"] : ["Selesai", "Sahur", "Berbuka"]).map((label) => (
                 <label
                   key={label}
                   className="flex h-11 items-center gap-3 rounded-md border border-border px-3 text-sm font-medium"
                 >
                   <input
                     type="checkbox"
-                    name={label === "Berbuka" ? "berbuka" : label.toLowerCase()}
+                    name={
+                      label === "Berbuka" || label === "Iftar"
+                        ? "berbuka"
+                        : label === "Completed"
+                          ? "selesai"
+                          : label.toLowerCase()
+                    }
                   />
                   {label}
                 </label>
               ))}
             </div>
             <label className="grid gap-2 text-sm font-medium text-foreground">
-              Catatan
+              {isEnglish ? "Notes" : "Catatan"}
               <textarea
                 name="notes"
                 rows={4}
@@ -165,19 +188,25 @@ export default function PuasaRoute() {
             </label>
             <Button type="submit" className="w-fit">
               <Save aria-hidden="true" />
-              Simpan
+              {isEnglish ? "Save" : "Simpan"}
             </Button>
           </form>
         </section>
 
         <section className="rounded-lg border border-border bg-card p-4 shadow-sm">
-          <h2 className="text-base font-semibold text-foreground">Riwayat</h2>
+          <h2 className="text-base font-semibold text-foreground">
+            {isEnglish ? "History" : "Riwayat"}
+          </h2>
           <div className="mt-4 grid gap-3">
             {history.length === 0 ? (
               <EmptyState
                 icon={Moon}
-                title="Belum ada riwayat puasa"
-                description="Catatan puasa yang berhasil tersimpan akan muncul di sini."
+                title={isEnglish ? "No fasting history yet" : "Belum ada riwayat puasa"}
+                description={
+                  isEnglish
+                    ? "Saved fasting records will appear here."
+                    : "Catatan puasa yang berhasil tersimpan akan muncul di sini."
+                }
               />
             ) : (
               history.map((item) => (
@@ -189,14 +218,22 @@ export default function PuasaRoute() {
                     {item.fast_type}
                   </Link>
                   <div className="mt-2 flex items-center justify-between gap-3 text-sm text-muted-foreground">
-                    <span>{formatRecordDate(item.record_date)}</span>
-                    <span>{item.completed ? "Selesai" : "Belum selesai"}</span>
+                    <span>{formatRecordDate(item.record_date, language)}</span>
+                    <span>
+                      {item.completed
+                        ? isEnglish
+                          ? "Completed"
+                          : "Selesai"
+                        : isEnglish
+                          ? "Not completed"
+                          : "Belum selesai"}
+                    </span>
                   </div>
                   <Link
                     to={`/puasa/${item.id}`}
                     className="mt-3 inline-flex text-xs font-medium text-sky-700 underline-offset-4 hover:underline dark:text-sky-300"
                   >
-                    Lihat detail
+                    {isEnglish ? "View detail" : "Lihat detail"}
                   </Link>
                 </article>
               ))
@@ -208,10 +245,6 @@ export default function PuasaRoute() {
   );
 }
 
-function formatRecordDate(value: string) {
-  return new Intl.DateTimeFormat("id-ID", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  }).format(new Date(value));
+function formatRecordDate(value: string, language: "id" | "en") {
+  return formatDateOnlyForDisplay(value, undefined, language);
 }

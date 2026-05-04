@@ -3,8 +3,14 @@ import { useEffect, useState, type ReactNode } from "react";
 import { NavLink, useLocation } from "react-router";
 
 import { Button } from "~/components/ui/button";
+import { SelectField } from "~/components/ui/select-field";
 import { ThemeToggle } from "~/components/theme-toggle";
-import { navigationItems } from "~/lib/navigation";
+import {
+  getLanguageOptions,
+  useLocale,
+  useTranslations,
+} from "~/lib/localization";
+import { getNavigationItems } from "~/lib/navigation";
 import { cn } from "~/lib/utils";
 
 type MainLayoutProps = {
@@ -20,9 +26,13 @@ export function MainLayout({
   actions,
   children,
 }: MainLayoutProps) {
+  const t = useTranslations();
+  const { language, setLanguage } = useLocale();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isDesktopSidebarOpen, setIsDesktopSidebarOpen] = useState(true);
   const location = useLocation();
+  const navigationItems = getNavigationItems(t.navigation);
+  const languageOptions = getLanguageOptions(t);
 
   useEffect(() => {
     setIsSidebarOpen(false);
@@ -54,7 +64,9 @@ export function MainLayout({
                 size="icon-sm"
                 className="shrink-0"
                 onClick={() => setIsSidebarOpen((current) => !current)}
-                aria-label={isSidebarOpen ? "Close sidebar" : "Open sidebar"}
+                aria-label={
+                  isSidebarOpen ? t.layout.closeSidebar : t.layout.openSidebar
+                }
                 aria-controls="mobile-sidebar-navigation"
                 aria-expanded={isSidebarOpen}
               >
@@ -87,7 +99,11 @@ export function MainLayout({
                 size="icon-sm"
                 className="shrink-0"
                 onClick={() => setIsDesktopSidebarOpen((current) => !current)}
-                aria-label={isDesktopSidebarOpen ? "Close sidebar" : "Open sidebar"}
+                aria-label={
+                  isDesktopSidebarOpen
+                    ? t.layout.closeSidebar
+                    : t.layout.openSidebar
+                }
                 aria-expanded={isDesktopSidebarOpen}
               >
                 {isDesktopSidebarOpen ? (
@@ -113,7 +129,7 @@ export function MainLayout({
                     size="icon-sm"
                     className="shrink-0 lg:hidden"
                     onClick={() => setIsSidebarOpen(true)}
-                    aria-label="Open sidebar"
+                    aria-label={t.layout.openSidebar}
                     aria-controls="mobile-sidebar-navigation"
                     aria-expanded={isSidebarOpen}
                   >
@@ -129,6 +145,21 @@ export function MainLayout({
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-3">
+              <div className="w-full min-w-40 sm:w-44">
+                <SelectField
+                  compact
+                  value={language}
+                  options={languageOptions.map((option) => ({
+                    value: option.value,
+                    label: option.label,
+                  }))}
+                  onValueChange={(value) => {
+                    if (value === "id" || value === "en") {
+                      setLanguage(value);
+                    }
+                  }}
+                />
+              </div>
               <ThemeToggle />
               {actions}
             </div>
@@ -151,8 +182,7 @@ function SidebarBrand({
     <div className="flex items-start justify-between gap-4">
       {!hideBrand ? (
         <div>
-          <p className="text-sm font-semibold text-foreground">Codefalah</p>
-          <p className="text-xs text-muted-foreground">Personal tracker</p>
+          <SidebarBrandText />
         </div>
       ) : (
         <div aria-hidden="true" />
@@ -163,6 +193,9 @@ function SidebarBrand({
 }
 
 function SidebarNav({ id }: { id?: string }) {
+  const t = useTranslations();
+  const navigationItems = getNavigationItems(t.navigation);
+
   return (
     <nav id={id} className="flex flex-col gap-1 overflow-visible pb-0">
       {navigationItems.map((item) => (
@@ -181,5 +214,16 @@ function SidebarNav({ id }: { id?: string }) {
         </NavLink>
       ))}
     </nav>
+  );
+}
+
+function SidebarBrandText() {
+  const t = useTranslations();
+
+  return (
+    <>
+      <p className="text-sm font-semibold text-foreground">{t.layout.appName}</p>
+      <p className="text-xs text-muted-foreground">{t.layout.appTagline}</p>
+    </>
   );
 }

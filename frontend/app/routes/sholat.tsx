@@ -7,7 +7,12 @@ import { EmptyState } from "~/components/empty-state";
 import { MainLayout } from "~/components/main-layout";
 import { SaveFeedback } from "~/components/save-feedback";
 import { Button } from "~/components/ui/button";
-import { getTodayDateInputValue } from "~/lib/form-defaults";
+import { DateField } from "~/components/ui/date-field";
+import {
+  formatDateOnlyForDisplay,
+  getTodayDateInputValue,
+} from "~/lib/form-defaults";
+import { useLocale } from "~/lib/localization";
 import { notifyTrackerDataChanged } from "~/lib/tracker-sync";
 import { apiRequest } from "~/services/api-client";
 
@@ -28,7 +33,6 @@ type LoaderData = {
   apiError?: string;
 };
 
-const prayers = ["Subuh", "Dzuhur", "Ashar", "Maghrib", "Isya"];
 const historyLimit = 10;
 
 export function meta({}: Route.MetaArgs) {
@@ -55,12 +59,18 @@ export async function loader(): Promise<LoaderData> {
 }
 
 export default function SholatRoute() {
+  const { language } = useLocale();
   const { history, apiError } = useLoaderData<typeof loader>();
   const revalidator = useRevalidator();
+  const [recordDate, setRecordDate] = useState(getTodayDateInputValue());
   const [saveState, setSaveState] = useState<{
     tone: "success" | "error";
     message: string;
   } | null>(null);
+  const isEnglish = language === "en";
+  const prayers = isEnglish
+    ? ["Fajr", "Dhuhr", "Asr", "Maghrib", "Isha"]
+    : ["Subuh", "Dzuhur", "Ashar", "Maghrib", "Isya"];
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -88,10 +98,12 @@ export default function SholatRoute() {
       });
 
       form.reset();
-      form.record_date.value = getTodayDateInputValue();
+      setRecordDate(getTodayDateInputValue());
       setSaveState({
         tone: "success",
-        message: "Catatan sholat berhasil disimpan.",
+        message: isEnglish
+          ? "Prayer record was saved successfully."
+          : "Catatan sholat berhasil disimpan.",
       });
       notifyTrackerDataChanged();
       revalidator.revalidate();
@@ -100,19 +112,29 @@ export default function SholatRoute() {
       setSaveState({
         tone: "error",
         message:
-          error instanceof Error ? error.message : "Gagal menyimpan catatan sholat.",
+          error instanceof Error
+            ? error.message
+            : isEnglish
+              ? "Failed to save the prayer record."
+              : "Gagal menyimpan catatan sholat.",
       });
     }
   }
 
   return (
     <MainLayout
-      title="Sholat Tracker"
-      description="Catatan sholat harian, berjamaah, dan catatan singkat."
+      title={isEnglish ? "Prayer Tracker" : "Sholat Tracker"}
+      description={
+        isEnglish
+          ? "Track daily prayers, congregation count, and short notes."
+          : "Catatan sholat harian, berjamaah, dan catatan singkat."
+      }
     >
       {apiError ? (
         <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-200">
-          {apiError}
+          {isEnglish
+            ? "Prayer history is not available from the backend yet. You can still try saving new data once the backend is ready."
+            : apiError}
         </div>
       ) : null}
 
@@ -121,7 +143,7 @@ export default function SholatRoute() {
           <div className="flex items-center gap-2">
             <Landmark className="size-5 text-emerald-600" aria-hidden="true" />
             <h2 className="text-base font-semibold text-foreground">
-              Checklist Hari Ini
+              {isEnglish ? "Today's Checklist" : "Checklist Hari Ini"}
             </h2>
           </div>
           <form className="mt-5 grid gap-4" onSubmit={handleSubmit}>
@@ -129,13 +151,12 @@ export default function SholatRoute() {
               <SaveFeedback tone={saveState.tone} message={saveState.message} />
             ) : null}
             <label className="grid gap-2 text-sm font-medium text-foreground">
-              Tanggal
-              <input
-                type="date"
+              {isEnglish ? "Date" : "Tanggal"}
+              <DateField
                 name="record_date"
                 required
-                defaultValue={getTodayDateInputValue()}
-                className="h-9 rounded-md border border-input bg-background px-3 text-sm"
+                value={recordDate}
+                onChange={(event) => setRecordDate(event.currentTarget.value)}
               />
             </label>
             <div className="grid gap-2 sm:grid-cols-2">
@@ -150,7 +171,7 @@ export default function SholatRoute() {
               ))}
             </div>
             <label className="grid gap-2 text-sm font-medium text-foreground">
-              Jumlah berjamaah
+              {isEnglish ? "Congregation count" : "Jumlah berjamaah"}
               <input
                 type="number"
                 min="0"
@@ -161,7 +182,7 @@ export default function SholatRoute() {
               />
             </label>
             <label className="grid gap-2 text-sm font-medium text-foreground">
-              Catatan
+              {isEnglish ? "Notes" : "Catatan"}
               <textarea
                 name="notes"
                 rows={4}
@@ -170,19 +191,27 @@ export default function SholatRoute() {
             </label>
             <Button type="submit" className="w-fit">
               <Check aria-hidden="true" />
-              Simpan
+              {isEnglish ? "Save" : "Simpan"}
             </Button>
           </form>
         </section>
 
         <section className="rounded-lg border border-border bg-card p-4 shadow-sm">
-          <h2 className="text-base font-semibold text-foreground">Riwayat</h2>
+          <h2 className="text-base font-semibold text-foreground">
+            {isEnglish ? "History" : "Riwayat"}
+          </h2>
           <div className="mt-4 grid gap-3">
             {history.length === 0 ? (
               <EmptyState
                 icon={Landmark}
-                title="Belum ada riwayat sholat"
-                description="Catatan sholat yang berhasil tersimpan akan muncul di sini."
+                title={
+                  isEnglish ? "No prayer history yet" : "Belum ada riwayat sholat"
+                }
+                description={
+                  isEnglish
+                    ? "Saved prayer records will appear here."
+                    : "Catatan sholat yang berhasil tersimpan akan muncul di sini."
+                }
               />
             ) : (
               history.map((item) => (
@@ -192,20 +221,22 @@ export default function SholatRoute() {
                       to={`/sholat/${item.id}`}
                       className="text-sm font-medium text-foreground underline-offset-4 hover:underline"
                     >
-                      {formatRecordDate(item.record_date)}
+                      {formatRecordDate(item.record_date, language)}
                     </Link>
                     <span className="rounded-md bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
                       {countCompletedPrayers(item)}/5
                     </span>
                   </div>
                   <p className="mt-2 text-sm text-muted-foreground">
-                    Berjamaah {item.congregation_count} kali
+                    {isEnglish
+                      ? `Congregation ${item.congregation_count} times`
+                      : `Berjamaah ${item.congregation_count} kali`}
                   </p>
                   <Link
                     to={`/sholat/${item.id}`}
                     className="mt-3 inline-flex text-xs font-medium text-emerald-700 underline-offset-4 hover:underline dark:text-emerald-300"
                   >
-                    Lihat detail
+                    {isEnglish ? "View detail" : "Lihat detail"}
                   </Link>
                 </article>
               ))
@@ -227,10 +258,6 @@ function countCompletedPrayers(record: SholatRecord) {
   ].filter(Boolean).length;
 }
 
-function formatRecordDate(value: string) {
-  return new Intl.DateTimeFormat("id-ID", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  }).format(new Date(value));
+function formatRecordDate(value: string, language: "id" | "en") {
+  return formatDateOnlyForDisplay(value, undefined, language);
 }

@@ -71,3 +71,47 @@ func (q *Queries) ListModuleContributionDays(ctx context.Context, arg ListModule
 
 	return items, nil
 }
+
+const listContributionYears = `
+SELECT DISTINCT EXTRACT(YEAR FROM activity_date)::int AS year
+FROM (
+  SELECT record_date AS activity_date FROM sholat_records
+  UNION ALL
+  SELECT record_date AS activity_date FROM puasa_records
+  UNION ALL
+  SELECT transaction_date AS activity_date FROM finance_transactions
+  UNION ALL
+  SELECT record_date AS activity_date FROM sport_records
+  UNION ALL
+  SELECT entry_date AS activity_date FROM journal_entries
+) activity
+ORDER BY year DESC
+`
+
+func (q *Queries) ListContributionYears(ctx context.Context) ([]int32, error) {
+	rows, err := q.db.QueryContext(ctx, listContributionYears)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	items := []int32{}
+	for rows.Next() {
+		var year int32
+		if err := rows.Scan(&year); err != nil {
+			return nil, err
+		}
+
+		items = append(items, year)
+	}
+
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return items, nil
+}

@@ -7,7 +7,12 @@ import { EmptyState } from "~/components/empty-state";
 import { MainLayout } from "~/components/main-layout";
 import { SaveFeedback } from "~/components/save-feedback";
 import { Button } from "~/components/ui/button";
-import { getTodayDateInputValue } from "~/lib/form-defaults";
+import { DateField } from "~/components/ui/date-field";
+import {
+  formatDateOnlyForDisplay,
+  getTodayDateInputValue,
+} from "~/lib/form-defaults";
+import { useLocale } from "~/lib/localization";
 import { notifyTrackerDataChanged } from "~/lib/tracker-sync";
 import { apiRequest } from "~/services/api-client";
 
@@ -51,8 +56,11 @@ export async function loader(): Promise<LoaderData> {
 }
 
 export default function OlahragaRoute() {
+  const { language } = useLocale();
+  const isEnglish = language === "en";
   const { history, apiError } = useLoaderData<typeof loader>();
   const revalidator = useRevalidator();
+  const [recordDate, setRecordDate] = useState(getTodayDateInputValue());
   const [saveState, setSaveState] = useState<{
     tone: "success" | "error";
     message: string;
@@ -81,11 +89,11 @@ export default function OlahragaRoute() {
       });
 
       form.reset();
-      form.record_date.value = getTodayDateInputValue();
+      setRecordDate(getTodayDateInputValue());
       form.duration_minutes.value = "0";
       setSaveState({
         tone: "success",
-        message: "Catatan olahraga berhasil disimpan.",
+        message: isEnglish ? "Workout record saved successfully." : "Catatan olahraga berhasil disimpan.",
       });
       notifyTrackerDataChanged();
       revalidator.revalidate();
@@ -94,7 +102,11 @@ export default function OlahragaRoute() {
       setSaveState({
         tone: "error",
         message:
-          error instanceof Error ? error.message : "Gagal menyimpan catatan olahraga.",
+          error instanceof Error
+            ? error.message
+            : isEnglish
+              ? "Failed to save workout record."
+              : "Gagal menyimpan catatan olahraga.",
       });
     }
   }
@@ -102,11 +114,17 @@ export default function OlahragaRoute() {
   return (
     <MainLayout
       title="Olahraga Tracker"
-      description="Catatan jenis olahraga, durasi, status, dan riwayat."
+      description={
+        isEnglish
+          ? "Track workout type, duration, completion status, and history."
+          : "Catatan jenis olahraga, durasi, status, dan riwayat."
+      }
     >
       {apiError ? (
         <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-200">
-          {apiError}
+          {isEnglish
+            ? "Workout history is not available from the backend yet. Data will appear here after the backend is ready."
+            : apiError}
         </div>
       ) : null}
 
@@ -115,7 +133,7 @@ export default function OlahragaRoute() {
           <div className="flex items-center gap-2">
             <Dumbbell className="size-5 text-rose-600" aria-hidden="true" />
             <h2 className="text-base font-semibold text-foreground">
-              Catatan Olahraga
+              {isEnglish ? "Workout Record" : "Catatan Olahraga"}
             </h2>
           </div>
           <form className="mt-5 grid gap-4" onSubmit={handleSubmit}>
@@ -124,26 +142,25 @@ export default function OlahragaRoute() {
             ) : null}
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="grid gap-2 text-sm font-medium text-foreground">
-                Tanggal
-                <input
-                  type="date"
+                {isEnglish ? "Date" : "Tanggal"}
+                <DateField
                   name="record_date"
                   required
-                  defaultValue={getTodayDateInputValue()}
-                  className="h-9 rounded-md border border-input bg-background px-3 text-sm"
+                  value={recordDate}
+                  onChange={(event) => setRecordDate(event.currentTarget.value)}
                 />
               </label>
               <label className="grid gap-2 text-sm font-medium text-foreground">
-                Jenis olahraga
+                {isEnglish ? "Workout type" : "Jenis olahraga"}
                 <input
                   name="sport_type"
-                  placeholder="Jalan kaki"
+                  placeholder={isEnglish ? "Walking" : "Jalan kaki"}
                   required
                   className="h-9 rounded-md border border-input bg-background px-3 text-sm"
                 />
               </label>
               <label className="grid gap-2 text-sm font-medium text-foreground">
-                Durasi menit
+                {isEnglish ? "Duration in minutes" : "Durasi menit"}
                 <input
                   type="number"
                   min="0"
@@ -155,12 +172,12 @@ export default function OlahragaRoute() {
               <label className="flex items-end gap-3 text-sm font-medium text-foreground">
                 <span className="flex h-9 items-center gap-3 rounded-md border border-border px-3">
                   <input type="checkbox" name="completed" />
-                  Selesai
+                  {isEnglish ? "Completed" : "Selesai"}
                 </span>
               </label>
             </div>
             <label className="grid gap-2 text-sm font-medium text-foreground">
-              Catatan
+              {isEnglish ? "Notes" : "Catatan"}
               <textarea
                 name="notes"
                 rows={4}
@@ -169,19 +186,25 @@ export default function OlahragaRoute() {
             </label>
             <Button type="submit" className="w-fit">
               <Save aria-hidden="true" />
-              Simpan
+              {isEnglish ? "Save" : "Simpan"}
             </Button>
           </form>
         </section>
 
         <section className="rounded-lg border border-border bg-card p-4 shadow-sm">
-          <h2 className="text-base font-semibold text-foreground">Riwayat</h2>
+          <h2 className="text-base font-semibold text-foreground">
+            {isEnglish ? "History" : "Riwayat"}
+          </h2>
           <div className="mt-4 grid gap-3">
             {history.length === 0 ? (
               <EmptyState
                 icon={Dumbbell}
-                title="Belum ada riwayat olahraga"
-                description="Catatan olahraga yang berhasil tersimpan akan muncul di sini."
+                title={isEnglish ? "No workout history yet" : "Belum ada riwayat olahraga"}
+                description={
+                  isEnglish
+                    ? "Saved workout records will appear here."
+                    : "Catatan olahraga yang berhasil tersimpan akan muncul di sini."
+                }
               />
             ) : (
               history.map((item) => (
@@ -194,17 +217,24 @@ export default function OlahragaRoute() {
                       {item.sport_type}
                     </Link>
                     <span className="text-xs font-medium text-muted-foreground">
-                      {item.completed ? "Selesai" : "Belum"}
+                      {item.completed
+                        ? isEnglish
+                          ? "Completed"
+                          : "Selesai"
+                        : isEnglish
+                          ? "Pending"
+                          : "Belum"}
                     </span>
                   </div>
                   <p className="mt-2 text-sm text-muted-foreground">
-                    {formatRecordDate(item.record_date)} · {item.duration_minutes} menit
+                    {formatRecordDate(item.record_date, language)} · {item.duration_minutes}{" "}
+                    {isEnglish ? "minutes" : "menit"}
                   </p>
                   <Link
                     to={`/olahraga/${item.id}`}
                     className="mt-3 inline-flex text-xs font-medium text-rose-700 underline-offset-4 hover:underline dark:text-rose-300"
                   >
-                    Lihat detail
+                    {isEnglish ? "View detail" : "Lihat detail"}
                   </Link>
                 </article>
               ))
@@ -216,10 +246,6 @@ export default function OlahragaRoute() {
   );
 }
 
-function formatRecordDate(value: string) {
-  return new Intl.DateTimeFormat("id-ID", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  }).format(new Date(value));
+function formatRecordDate(value: string, language: "id" | "en") {
+  return formatDateOnlyForDisplay(value, undefined, language);
 }

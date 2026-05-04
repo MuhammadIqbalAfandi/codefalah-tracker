@@ -2,6 +2,7 @@ import { AlertTriangle, Trash2 } from "lucide-react";
 import { useState } from "react";
 
 import { Button } from "~/components/ui/button";
+import { useTranslations } from "~/lib/localization";
 
 type DeleteConfirmationProps = {
   title: string;
@@ -15,12 +16,15 @@ type DeleteConfirmationProps = {
 export function DeleteConfirmation({
   title,
   description,
-  confirmLabel = "Hapus data",
-  cancelLabel = "Batal",
+  confirmLabel,
+  cancelLabel,
   isPending = false,
   onConfirm,
 }: DeleteConfirmationProps) {
+  const t = useTranslations();
   const [isOpen, setIsOpen] = useState(false);
+  const resolvedConfirmLabel = confirmLabel ?? t.common.delete;
+  const resolvedCancelLabel = cancelLabel ?? t.common.cancel;
 
   async function handleConfirm() {
     await onConfirm();
@@ -35,7 +39,7 @@ export function DeleteConfirmation({
         className="w-fit"
       >
         <Trash2 aria-hidden="true" />
-        Hapus
+        {t.common.delete}
       </Button>
     );
   }
@@ -60,7 +64,7 @@ export function DeleteConfirmation({
               disabled={isPending}
             >
               <Trash2 aria-hidden="true" />
-              {isPending ? "Menghapus..." : confirmLabel}
+              {isPending ? t.common.deleting : resolvedConfirmLabel}
             </Button>
             <Button
               type="button"
@@ -68,7 +72,7 @@ export function DeleteConfirmation({
               onClick={() => setIsOpen(false)}
               disabled={isPending}
             >
-              {cancelLabel}
+              {resolvedCancelLabel}
             </Button>
           </div>
         </div>
