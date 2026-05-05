@@ -4,8 +4,9 @@ import {
   getIntlLocale,
   type AppLanguage,
 } from "~/lib/locale-config";
+import { APP_TIME_ZONE } from "~/lib/env";
 
-export const APP_TIME_ZONE = "Asia/Jakarta";
+export { APP_TIME_ZONE } from "~/lib/env";
 
 export function getTodayDateInputValue(now = new Date()) {
   return formatLocalDateInputValue(now);

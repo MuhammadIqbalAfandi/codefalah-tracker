@@ -39,7 +39,7 @@ export function ThemeToggle() {
       type="button"
       variant="outline"
       onClick={toggleTheme}
-      className="w-fit"
+      className="min-h-10 w-full min-w-40 justify-between rounded-xl px-3 sm:min-w-44"
       suppressHydrationWarning
     >
       {isReady ? (

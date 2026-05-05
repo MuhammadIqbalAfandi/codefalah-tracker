@@ -32,7 +32,7 @@ func main() {
 
 	server := &http.Server{
 		Addr:         cfg.Addr,
-		Handler:      handlers.NewRouter(log, trackerdb.New(database)),
+		Handler:      handlers.NewRouter(log, trackerdb.New(database), cfg.CORSAllowedOrigins...),
 		ReadTimeout:  cfg.ReadTimeout,
 		WriteTimeout: cfg.WriteTimeout,
 		IdleTimeout:  cfg.IdleTimeout,

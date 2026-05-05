@@ -14,8 +14,10 @@ import {
 } from "~/components/ui/select-field";
 import {
   formatDateOnlyForDisplay,
+  formatCurrencyForDisplay,
   normalizeDateInputValue,
 } from "~/lib/form-defaults";
+import { useLocale, useTranslations } from "~/lib/localization";
 import { notifyTrackerDataChanged } from "~/lib/tracker-sync";
 import { ApiError, apiRequest } from "~/services/api-client";
 
@@ -66,6 +68,9 @@ export async function loader({ params }: Route.LoaderArgs) {
 
 export default function KeuanganDetailRoute() {
   const { record } = useLoaderData<typeof loader>();
+  const { language } = useLocale();
+  const t = useTranslations();
+  const isEnglish = language === "en";
   const navigate = useNavigate();
   const revalidator = useRevalidator();
   const [saveState, setSaveState] = useState<{
@@ -95,7 +100,9 @@ export default function KeuanganDetailRoute() {
 
       setSaveState({
         tone: "success",
-        message: "Transaksi keuangan berhasil diperbarui.",
+        message: isEnglish
+          ? "Finance transaction was updated successfully."
+          : "Transaksi keuangan berhasil diperbarui.",
       });
       notifyTrackerDataChanged();
       revalidator.revalidate();
@@ -105,7 +112,9 @@ export default function KeuanganDetailRoute() {
         message:
           error instanceof Error
             ? error.message
-            : "Gagal memperbarui transaksi keuangan.",
+            : isEnglish
+              ? "Failed to update the finance transaction."
+              : "Gagal memperbarui transaksi keuangan.",
       });
     }
   }
@@ -126,7 +135,9 @@ export default function KeuanganDetailRoute() {
         message:
           error instanceof Error
             ? error.message
-            : "Gagal menghapus transaksi keuangan.",
+            : isEnglish
+              ? "Failed to delete the finance transaction."
+              : "Gagal menghapus transaksi keuangan.",
       });
       setIsDeleting(false);
     }
@@ -134,15 +145,19 @@ export default function KeuanganDetailRoute() {
 
   return (
     <MainLayout
-      title="Detail Keuangan"
-      description="Edit transaksi keuangan yang sudah tersimpan."
+      title={isEnglish ? "Finance Detail" : "Detail Keuangan"}
+      description={
+        isEnglish
+          ? "Edit a saved finance transaction."
+          : "Edit transaksi keuangan yang sudah tersimpan."
+      }
       actions={
         <Link
           to="/keuangan"
           className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
         >
           <ArrowLeft className="size-4" aria-hidden="true" />
-          Kembali ke riwayat
+          {t.common.backToHistory}
         </Link>
       }
     >
@@ -151,7 +166,7 @@ export default function KeuanganDetailRoute() {
           <div className="flex items-center gap-2">
             <WalletCards className="size-5 text-amber-600" aria-hidden="true" />
             <h2 className="text-base font-semibold text-foreground">
-              Edit transaksi
+              {isEnglish ? "Edit transaction" : "Edit transaksi"}
             </h2>
           </div>
           <form className="mt-5 grid gap-4" onSubmit={handleSubmit}>
@@ -160,7 +175,7 @@ export default function KeuanganDetailRoute() {
             ) : null}
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="grid gap-2 text-sm font-medium text-foreground">
-                Tanggal
+                {t.common.date}
                 <DateField
                   name="transaction_date"
                   defaultValue={normalizeDateInputValue(record.transaction_date)}
@@ -168,15 +183,15 @@ export default function KeuanganDetailRoute() {
                 />
               </label>
               <label className="grid gap-2 text-sm font-medium text-foreground">
-                Tipe
+                {isEnglish ? "Type" : "Tipe"}
                 <SelectField
                   name="transaction_type"
                   defaultValue={record.transaction_type}
-                  options={transactionTypeOptions}
+                  options={getTransactionTypeOptions(language)}
                 />
               </label>
               <label className="grid gap-2 text-sm font-medium text-foreground">
-                Kategori
+                {isEnglish ? "Category" : "Kategori"}
                 <input
                   name="category"
                   defaultValue={record.category}
@@ -185,7 +200,7 @@ export default function KeuanganDetailRoute() {
                 />
               </label>
               <label className="grid gap-2 text-sm font-medium text-foreground">
-                Jumlah
+                {isEnglish ? "Amount" : "Jumlah"}
                 <input
                   type="number"
                   name="amount"
@@ -198,7 +213,7 @@ export default function KeuanganDetailRoute() {
               </label>
             </div>
             <label className="grid gap-2 text-sm font-medium text-foreground">
-              Catatan
+              {t.common.notes}
               <textarea
                 name="notes"
                 rows={4}
@@ -208,13 +223,17 @@ export default function KeuanganDetailRoute() {
             </label>
             <Button type="submit" className="w-fit">
               <Save aria-hidden="true" />
-              Simpan perubahan
+              {t.common.saveChanges}
             </Button>
           </form>
           <div className="mt-4">
             <DeleteConfirmation
-              title="Hapus transaksi ini?"
-              description="Transaksi yang dihapus tidak bisa dikembalikan dan ringkasan keuangan akan menyesuaikan."
+              title={isEnglish ? "Delete this transaction?" : "Hapus transaksi ini?"}
+              description={
+                isEnglish
+                  ? "Deleted transactions cannot be restored and the finance summary will adjust automatically."
+                  : "Transaksi yang dihapus tidak bisa dikembalikan dan ringkasan keuangan akan menyesuaikan."
+              }
               isPending={isDeleting}
               onConfirm={handleDelete}
             />
@@ -222,23 +241,27 @@ export default function KeuanganDetailRoute() {
         </section>
 
         <section className="rounded-lg border border-border bg-card p-4 shadow-sm">
-          <h2 className="text-base font-semibold text-foreground">Ringkasan</h2>
+          <h2 className="text-base font-semibold text-foreground">{t.common.summary}</h2>
           <dl className="mt-4 grid gap-3 text-sm">
             <div>
-              <dt className="text-muted-foreground">Tanggal</dt>
+              <dt className="text-muted-foreground">{t.common.date}</dt>
               <dd className="font-medium text-foreground">
-                {formatRecordDate(record.transaction_date)}
+                {formatRecordDate(record.transaction_date, language)}
               </dd>
             </div>
             <div>
-              <dt className="text-muted-foreground">Kategori</dt>
+              <dt className="text-muted-foreground">
+                {isEnglish ? "Category" : "Kategori"}
+              </dt>
               <dd className="font-medium text-foreground">{record.category}</dd>
             </div>
             <div>
-              <dt className="text-muted-foreground">Jumlah</dt>
+              <dt className="text-muted-foreground">
+                {isEnglish ? "Amount" : "Jumlah"}
+              </dt>
               <dd className="font-medium text-foreground">
                 {record.transaction_type === "income" ? "+" : "-"}
-                {formatCurrency(record.amount)}
+                {formatCurrency(record.amount, language)}
               </dd>
             </div>
           </dl>
@@ -248,15 +271,33 @@ export default function KeuanganDetailRoute() {
   );
 }
 
-function formatRecordDate(value: string) {
-  return formatDateOnlyForDisplay(value);
+function formatRecordDate(value: string, language: "id" | "en") {
+  return formatDateOnlyForDisplay(value, undefined, language);
 }
 
-function formatCurrency(value: string) {
-  const amount = Number.parseFloat(value);
-  return new Intl.NumberFormat("id-ID", {
+function formatCurrency(value: string, language: "id" | "en") {
+  return formatCurrencyForDisplay(value, language, {
     style: "currency",
     currency: "IDR",
     maximumFractionDigits: 2,
-  }).format(Number.isFinite(amount) ? amount : 0);
+  });
+}
+
+function getTransactionTypeOptions(language: "id" | "en"): SelectFieldOption[] {
+  if (language === "en") {
+    return [
+      {
+        value: "expense",
+        label: "Expense",
+        description: "Outgoing cash flow that affects this month's summary.",
+      },
+      {
+        value: "income",
+        label: "Income",
+        description: "Incoming cash flow that increases this month's balance.",
+      },
+    ];
+  }
+
+  return transactionTypeOptions;
 }

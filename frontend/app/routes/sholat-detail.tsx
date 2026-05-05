@@ -12,6 +12,7 @@ import {
   formatDateOnlyForDisplay,
   normalizeDateInputValue,
 } from "~/lib/form-defaults";
+import { useLocale, useTranslations } from "~/lib/localization";
 import { notifyTrackerDataChanged } from "~/lib/tracker-sync";
 import { ApiError, apiRequest } from "~/services/api-client";
 
@@ -26,8 +27,6 @@ type SholatRecord = {
   congregation_count: number;
   notes: string;
 };
-
-const prayers = ["Subuh", "Dzuhur", "Ashar", "Maghrib", "Isya"] as const;
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -52,6 +51,9 @@ export async function loader({ params }: Route.LoaderArgs) {
 
 export default function SholatDetailRoute() {
   const { record } = useLoaderData<typeof loader>();
+  const { language } = useLocale();
+  const t = useTranslations();
+  const isEnglish = language === "en";
   const navigate = useNavigate();
   const revalidator = useRevalidator();
   const [saveState, setSaveState] = useState<{
@@ -86,7 +88,9 @@ export default function SholatDetailRoute() {
 
       setSaveState({
         tone: "success",
-        message: "Catatan sholat berhasil diperbarui.",
+        message: isEnglish
+          ? "Prayer record was updated successfully."
+          : "Catatan sholat berhasil diperbarui.",
       });
       notifyTrackerDataChanged();
       revalidator.revalidate();
@@ -94,7 +98,11 @@ export default function SholatDetailRoute() {
       setSaveState({
         tone: "error",
         message:
-          error instanceof Error ? error.message : "Gagal memperbarui catatan sholat.",
+          error instanceof Error
+            ? error.message
+            : isEnglish
+              ? "Failed to update the prayer record."
+              : "Gagal memperbarui catatan sholat.",
       });
     }
   }
@@ -113,7 +121,11 @@ export default function SholatDetailRoute() {
       setSaveState({
         tone: "error",
         message:
-          error instanceof Error ? error.message : "Gagal menghapus catatan sholat.",
+          error instanceof Error
+            ? error.message
+            : isEnglish
+              ? "Failed to delete the prayer record."
+              : "Gagal menghapus catatan sholat.",
       });
       setIsDeleting(false);
     }
@@ -121,15 +133,19 @@ export default function SholatDetailRoute() {
 
   return (
     <MainLayout
-      title="Detail Sholat"
-      description={`Edit catatan sholat untuk ${formatRecordDate(record.record_date)}.`}
+      title={isEnglish ? "Prayer Detail" : "Detail Sholat"}
+      description={
+        isEnglish
+          ? `Edit the prayer record for ${formatRecordDate(record.record_date, language)}.`
+          : `Edit catatan sholat untuk ${formatRecordDate(record.record_date, language)}.`
+      }
       actions={
         <Link
           to="/sholat"
           className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
         >
           <ArrowLeft className="size-4" aria-hidden="true" />
-          Kembali ke riwayat
+          {t.common.backToHistory}
         </Link>
       }
     >
@@ -138,7 +154,7 @@ export default function SholatDetailRoute() {
           <div className="flex items-center gap-2">
             <Landmark className="size-5 text-emerald-600" aria-hidden="true" />
             <h2 className="text-base font-semibold text-foreground">
-              Edit catatan
+              {isEnglish ? "Edit record" : "Edit catatan"}
             </h2>
           </div>
           <form className="mt-5 grid gap-4" onSubmit={handleSubmit}>
@@ -146,30 +162,34 @@ export default function SholatDetailRoute() {
               <SaveFeedback tone={saveState.tone} message={saveState.message} />
             ) : null}
             <label className="grid gap-2 text-sm font-medium text-foreground">
-              Tanggal
+              {t.common.date}
               <DateField
                 value={normalizeDateInputValue(record.record_date)}
                 disabled
-                helperText="Tanggal record ini dikunci agar histori ibadah tetap konsisten."
+                helperText={
+                  isEnglish
+                    ? "This record date stays locked so the worship history remains consistent."
+                    : "Tanggal record ini dikunci agar histori ibadah tetap konsisten."
+                }
               />
             </label>
             <div className="grid gap-2 sm:grid-cols-2">
-              {prayers.map((prayer) => (
+              {getPrayerOptions(language).map((prayer) => (
                 <label
-                  key={prayer}
+                  key={prayer.name}
                   className="flex h-11 items-center gap-3 rounded-md border border-border px-3 text-sm font-medium"
                 >
                   <input
                     type="checkbox"
-                    name={prayer.toLowerCase()}
-                    defaultChecked={record[prayer.toLowerCase() as keyof SholatRecord] as boolean}
+                    name={prayer.name}
+                    defaultChecked={record[prayer.name as keyof SholatRecord] as boolean}
                   />
-                  {prayer}
+                  {prayer.label}
                 </label>
               ))}
             </div>
             <label className="grid gap-2 text-sm font-medium text-foreground">
-              Jumlah berjamaah
+              {isEnglish ? "Congregation count" : "Jumlah berjamaah"}
               <input
                 type="number"
                 min="0"
@@ -180,7 +200,7 @@ export default function SholatDetailRoute() {
               />
             </label>
             <label className="grid gap-2 text-sm font-medium text-foreground">
-              Catatan
+              {t.common.notes}
               <textarea
                 name="notes"
                 rows={4}
@@ -190,13 +210,21 @@ export default function SholatDetailRoute() {
             </label>
             <Button type="submit" className="w-fit">
               <Check aria-hidden="true" />
-              Simpan perubahan
+              {t.common.saveChanges}
             </Button>
           </form>
           <div className="mt-4">
             <DeleteConfirmation
-              title="Hapus catatan sholat ini?"
-              description="Catatan sholat yang dihapus tidak bisa dikembalikan lagi."
+              title={
+                isEnglish
+                  ? "Delete this prayer record?"
+                  : "Hapus catatan sholat ini?"
+              }
+              description={
+                isEnglish
+                  ? "Deleted prayer records cannot be restored."
+                  : "Catatan sholat yang dihapus tidak bisa dikembalikan lagi."
+              }
               isPending={isDeleting}
               onConfirm={handleDelete}
             />
@@ -204,24 +232,26 @@ export default function SholatDetailRoute() {
         </section>
 
         <section className="rounded-lg border border-border bg-card p-4 shadow-sm">
-          <h2 className="text-base font-semibold text-foreground">Ringkasan</h2>
+          <h2 className="text-base font-semibold text-foreground">{t.common.summary}</h2>
           <dl className="mt-4 grid gap-3 text-sm">
             <div>
-              <dt className="text-muted-foreground">Tanggal</dt>
+              <dt className="text-muted-foreground">{t.common.date}</dt>
               <dd className="font-medium text-foreground">
-                {formatRecordDate(record.record_date)}
+                {formatRecordDate(record.record_date, language)}
               </dd>
             </div>
             <div>
               <dt className="text-muted-foreground">Progress</dt>
               <dd className="font-medium text-foreground">
-                {countCompletedPrayers(record)}/5 selesai
+                {countCompletedPrayers(record)}/5 {isEnglish ? "completed" : "selesai"}
               </dd>
             </div>
             <div>
-              <dt className="text-muted-foreground">Berjamaah</dt>
+              <dt className="text-muted-foreground">
+                {isEnglish ? "Congregation" : "Berjamaah"}
+              </dt>
               <dd className="font-medium text-foreground">
-                {record.congregation_count} kali
+                {record.congregation_count} {isEnglish ? "times" : "kali"}
               </dd>
             </div>
           </dl>
@@ -231,8 +261,28 @@ export default function SholatDetailRoute() {
   );
 }
 
-function formatRecordDate(value: string) {
-  return formatDateOnlyForDisplay(value);
+function formatRecordDate(value: string, language: "id" | "en") {
+  return formatDateOnlyForDisplay(value, undefined, language);
+}
+
+function getPrayerOptions(language: "id" | "en") {
+  if (language === "en") {
+    return [
+      { name: "subuh", label: "Fajr" },
+      { name: "dzuhur", label: "Dhuhr" },
+      { name: "ashar", label: "Asr" },
+      { name: "maghrib", label: "Maghrib" },
+      { name: "isya", label: "Isha" },
+    ] as const;
+  }
+
+  return [
+    { name: "subuh", label: "Subuh" },
+    { name: "dzuhur", label: "Dzuhur" },
+    { name: "ashar", label: "Ashar" },
+    { name: "maghrib", label: "Maghrib" },
+    { name: "isya", label: "Isya" },
+  ] as const;
 }
 
 function countCompletedPrayers(record: SholatRecord) {

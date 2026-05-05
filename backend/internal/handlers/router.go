@@ -3,8 +3,6 @@ package handlers
 import (
 	"log/slog"
 	"net/http"
-	"os"
-	"strings"
 	"time"
 
 	trackerdb "codefalah-tracker/backend/internal/db"
@@ -18,7 +16,11 @@ type RouterHandlers struct {
 	queries *trackerdb.Queries
 }
 
-func NewRouter(logger *slog.Logger, queries *trackerdb.Queries) http.Handler {
+func NewRouter(
+	logger *slog.Logger,
+	queries *trackerdb.Queries,
+	allowedOrigins ...string,
+) http.Handler {
 	routerHandlers := &RouterHandlers{
 		logger:  logger,
 		queries: queries,
@@ -28,7 +30,7 @@ func NewRouter(logger *slog.Logger, queries *trackerdb.Queries) http.Handler {
 	r.Use(middleware.RequestID)
 	r.Use(middleware.RealIP)
 	r.Use(middleware.Recoverer)
-	r.Use(corsMiddleware)
+	r.Use(corsMiddleware(allowedOrigins))
 
 	r.Options("/*", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNoContent)
@@ -77,52 +79,43 @@ func NewRouter(logger *slog.Logger, queries *trackerdb.Queries) http.Handler {
 	return r
 }
 
-func corsMiddleware(next http.Handler) http.Handler {
-	allowedOrigins := allowedOriginsFromEnv()
+func corsMiddleware(origins []string) func(http.Handler) http.Handler {
+	allowedOrigins := allowedOriginsSet(origins)
 
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS")
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type,Authorization")
-		w.Header().Set("Vary", "Origin")
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS")
+			w.Header().Set("Access-Control-Allow-Headers", "Content-Type,Authorization")
+			w.Header().Set("Vary", "Origin")
 
-		origin := r.Header.Get("Origin")
-		if origin != "" && allowedOrigins[origin] {
-			w.Header().Set("Access-Control-Allow-Origin", origin)
-		}
+			origin := r.Header.Get("Origin")
+			if origin != "" && allowedOrigins[origin] {
+				w.Header().Set("Access-Control-Allow-Origin", origin)
+			}
 
-		if r.Method == http.MethodOptions {
-			if origin != "" && !allowedOrigins[origin] {
-				w.WriteHeader(http.StatusForbidden)
+			if r.Method == http.MethodOptions {
+				if origin != "" && !allowedOrigins[origin] {
+					w.WriteHeader(http.StatusForbidden)
+					return
+				}
+
+				w.WriteHeader(http.StatusNoContent)
 				return
 			}
 
-			w.WriteHeader(http.StatusNoContent)
-			return
-		}
-
-		next.ServeHTTP(w, r)
-	})
+			next.ServeHTTP(w, r)
+		})
+	}
 }
 
-func allowedOriginsFromEnv() map[string]bool {
-	rawOrigins := os.Getenv("CORS_ALLOWED_ORIGINS")
-	if strings.TrimSpace(rawOrigins) == "" {
-		rawOrigins = strings.Join([]string{
-			"http://localhost:3000",
-			"http://127.0.0.1:3000",
-			"http://localhost:5173",
-			"http://127.0.0.1:5173",
-		}, ",")
-	}
-
+func allowedOriginsSet(origins []string) map[string]bool {
 	allowedOrigins := make(map[string]bool)
-	for _, origin := range strings.Split(rawOrigins, ",") {
-		trimmedOrigin := strings.TrimSpace(origin)
-		if trimmedOrigin == "" {
+	for _, origin := range origins {
+		if origin == "" {
 			continue
 		}
 
-		allowedOrigins[trimmedOrigin] = true
+		allowedOrigins[origin] = true
 	}
 
 	return allowedOrigins

@@ -160,7 +160,9 @@ export function MainLayout({
                   }}
                 />
               </div>
-              <ThemeToggle />
+              <div className="w-full min-w-40 sm:w-44">
+                <ThemeToggle />
+              </div>
               {actions}
             </div>
           </header>

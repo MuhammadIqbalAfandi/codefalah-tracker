@@ -12,6 +12,7 @@ import {
   formatDateOnlyForDisplay,
   normalizeDateInputValue,
 } from "~/lib/form-defaults";
+import { useLocale, useTranslations } from "~/lib/localization";
 import { notifyTrackerDataChanged } from "~/lib/tracker-sync";
 import { ApiError, apiRequest } from "~/services/api-client";
 
@@ -48,6 +49,9 @@ export async function loader({ params }: Route.LoaderArgs) {
 
 export default function PuasaDetailRoute() {
   const { record } = useLoaderData<typeof loader>();
+  const { language } = useLocale();
+  const t = useTranslations();
+  const isEnglish = language === "en";
   const navigate = useNavigate();
   const revalidator = useRevalidator();
   const [saveState, setSaveState] = useState<{
@@ -76,7 +80,9 @@ export default function PuasaDetailRoute() {
 
       setSaveState({
         tone: "success",
-        message: "Catatan puasa berhasil diperbarui.",
+        message: isEnglish
+          ? "Fasting record was updated successfully."
+          : "Catatan puasa berhasil diperbarui.",
       });
       notifyTrackerDataChanged();
       revalidator.revalidate();
@@ -84,7 +90,11 @@ export default function PuasaDetailRoute() {
       setSaveState({
         tone: "error",
         message:
-          error instanceof Error ? error.message : "Gagal memperbarui catatan puasa.",
+          error instanceof Error
+            ? error.message
+            : isEnglish
+              ? "Failed to update the fasting record."
+              : "Gagal memperbarui catatan puasa.",
       });
     }
   }
@@ -103,7 +113,11 @@ export default function PuasaDetailRoute() {
       setSaveState({
         tone: "error",
         message:
-          error instanceof Error ? error.message : "Gagal menghapus catatan puasa.",
+          error instanceof Error
+            ? error.message
+            : isEnglish
+              ? "Failed to delete the fasting record."
+              : "Gagal menghapus catatan puasa.",
       });
       setIsDeleting(false);
     }
@@ -111,35 +125,45 @@ export default function PuasaDetailRoute() {
 
   return (
     <MainLayout
-      title="Detail Puasa"
-      description={`Edit catatan puasa untuk ${formatRecordDate(record.record_date)}.`}
+      title={isEnglish ? "Fasting Detail" : "Detail Puasa"}
+      description={
+        isEnglish
+          ? `Edit the fasting record for ${formatRecordDate(record.record_date, language)}.`
+          : `Edit catatan puasa untuk ${formatRecordDate(record.record_date, language)}.`
+      }
       actions={
         <Link
           to="/puasa"
           className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
         >
           <ArrowLeft className="size-4" aria-hidden="true" />
-          Kembali ke riwayat
+          {t.common.backToHistory}
         </Link>
       }
     >
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_320px]">
         <section className="rounded-lg border border-border bg-card p-4 shadow-sm">
-          <h2 className="text-base font-semibold text-foreground">Edit catatan</h2>
+          <h2 className="text-base font-semibold text-foreground">
+            {isEnglish ? "Edit record" : "Edit catatan"}
+          </h2>
           <form className="mt-5 grid gap-4" onSubmit={handleSubmit}>
             {saveState ? (
               <SaveFeedback tone={saveState.tone} message={saveState.message} />
             ) : null}
             <label className="grid gap-2 text-sm font-medium text-foreground">
-              Tanggal
+              {t.common.date}
               <DateField
                 value={normalizeDateInputValue(record.record_date)}
                 disabled
-                helperText="Tanggal puasa dikunci agar kontribusi hari itu tidak bergeser."
+                helperText={
+                  isEnglish
+                    ? "The fasting date stays locked so that day's contribution remains stable."
+                    : "Tanggal puasa dikunci agar kontribusi hari itu tidak bergeser."
+                }
               />
             </label>
             <label className="grid gap-2 text-sm font-medium text-foreground">
-              Jenis puasa
+              {isEnglish ? "Fasting type" : "Jenis puasa"}
               <input
                 name="fast_type"
                 defaultValue={record.fast_type}
@@ -150,7 +174,7 @@ export default function PuasaDetailRoute() {
             <div className="grid gap-2 sm:grid-cols-3">
               <label className="flex h-11 items-center gap-3 rounded-md border border-border px-3 text-sm font-medium">
                 <input type="checkbox" name="completed" defaultChecked={record.completed} />
-                Selesai
+                {isEnglish ? "Completed" : "Selesai"}
               </label>
               <label className="flex h-11 items-center gap-3 rounded-md border border-border px-3 text-sm font-medium">
                 <input type="checkbox" name="sahur" defaultChecked={record.sahur} />
@@ -158,11 +182,11 @@ export default function PuasaDetailRoute() {
               </label>
               <label className="flex h-11 items-center gap-3 rounded-md border border-border px-3 text-sm font-medium">
                 <input type="checkbox" name="iftar" defaultChecked={record.iftar} />
-                Berbuka
+                {isEnglish ? "Iftar" : "Berbuka"}
               </label>
             </div>
             <label className="grid gap-2 text-sm font-medium text-foreground">
-              Catatan
+              {t.common.notes}
               <textarea
                 name="notes"
                 rows={4}
@@ -172,13 +196,21 @@ export default function PuasaDetailRoute() {
             </label>
             <Button type="submit" className="w-fit">
               <Save aria-hidden="true" />
-              Simpan perubahan
+              {t.common.saveChanges}
             </Button>
           </form>
           <div className="mt-4">
             <DeleteConfirmation
-              title="Hapus catatan puasa ini?"
-              description="Catatan puasa yang dihapus tidak bisa dikembalikan lagi."
+              title={
+                isEnglish
+                  ? "Delete this fasting record?"
+                  : "Hapus catatan puasa ini?"
+              }
+              description={
+                isEnglish
+                  ? "Deleted fasting records cannot be restored."
+                  : "Catatan puasa yang dihapus tidak bisa dikembalikan lagi."
+              }
               isPending={isDeleting}
               onConfirm={handleDelete}
             />
@@ -186,22 +218,32 @@ export default function PuasaDetailRoute() {
         </section>
 
         <section className="rounded-lg border border-border bg-card p-4 shadow-sm">
-          <h2 className="text-base font-semibold text-foreground">Ringkasan</h2>
+          <h2 className="text-base font-semibold text-foreground">{t.common.summary}</h2>
           <dl className="mt-4 grid gap-3 text-sm">
             <div>
-              <dt className="text-muted-foreground">Tanggal</dt>
+              <dt className="text-muted-foreground">{t.common.date}</dt>
               <dd className="font-medium text-foreground">
-                {formatRecordDate(record.record_date)}
+                {formatRecordDate(record.record_date, language)}
               </dd>
             </div>
             <div>
-              <dt className="text-muted-foreground">Jenis</dt>
+              <dt className="text-muted-foreground">
+                {isEnglish ? "Type" : "Jenis"}
+              </dt>
               <dd className="font-medium text-foreground">{record.fast_type}</dd>
             </div>
             <div>
-              <dt className="text-muted-foreground">Status</dt>
+              <dt className="text-muted-foreground">
+                {isEnglish ? "Status" : "Status"}
+              </dt>
               <dd className="font-medium text-foreground">
-                {record.completed ? "Selesai" : "Belum selesai"}
+                {record.completed
+                  ? isEnglish
+                    ? "Completed"
+                    : "Selesai"
+                  : isEnglish
+                    ? "Not completed yet"
+                    : "Belum selesai"}
               </dd>
             </div>
           </dl>
@@ -211,6 +253,6 @@ export default function PuasaDetailRoute() {
   );
 }
 
-function formatRecordDate(value: string) {
-  return formatDateOnlyForDisplay(value);
+function formatRecordDate(value: string, language: "id" | "en") {
+  return formatDateOnlyForDisplay(value, undefined, language);
 }

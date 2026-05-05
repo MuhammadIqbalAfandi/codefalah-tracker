@@ -12,6 +12,7 @@ import {
   formatDateOnlyForDisplay,
   normalizeDateInputValue,
 } from "~/lib/form-defaults";
+import { useLocale, useTranslations } from "~/lib/localization";
 import { notifyTrackerDataChanged } from "~/lib/tracker-sync";
 import { ApiError, apiRequest } from "~/services/api-client";
 
@@ -47,6 +48,9 @@ export async function loader({ params }: Route.LoaderArgs) {
 
 export default function OlahragaDetailRoute() {
   const { record } = useLoaderData<typeof loader>();
+  const { language } = useLocale();
+  const t = useTranslations();
+  const isEnglish = language === "en";
   const navigate = useNavigate();
   const revalidator = useRevalidator();
   const [saveState, setSaveState] = useState<{
@@ -78,7 +82,9 @@ export default function OlahragaDetailRoute() {
 
       setSaveState({
         tone: "success",
-        message: "Catatan olahraga berhasil diperbarui.",
+        message: isEnglish
+          ? "Workout record was updated successfully."
+          : "Catatan olahraga berhasil diperbarui.",
       });
       notifyTrackerDataChanged();
       revalidator.revalidate();
@@ -86,7 +92,11 @@ export default function OlahragaDetailRoute() {
       setSaveState({
         tone: "error",
         message:
-          error instanceof Error ? error.message : "Gagal memperbarui catatan olahraga.",
+          error instanceof Error
+            ? error.message
+            : isEnglish
+              ? "Failed to update the workout record."
+              : "Gagal memperbarui catatan olahraga.",
       });
     }
   }
@@ -105,7 +115,11 @@ export default function OlahragaDetailRoute() {
       setSaveState({
         tone: "error",
         message:
-          error instanceof Error ? error.message : "Gagal menghapus catatan olahraga.",
+          error instanceof Error
+            ? error.message
+            : isEnglish
+              ? "Failed to delete the workout record."
+              : "Gagal menghapus catatan olahraga.",
       });
       setIsDeleting(false);
     }
@@ -113,15 +127,19 @@ export default function OlahragaDetailRoute() {
 
   return (
     <MainLayout
-      title="Detail Olahraga"
-      description="Edit catatan olahraga yang sudah tersimpan."
+      title={isEnglish ? "Workout Detail" : "Detail Olahraga"}
+      description={
+        isEnglish
+          ? "Edit a saved workout record."
+          : "Edit catatan olahraga yang sudah tersimpan."
+      }
       actions={
         <Link
           to="/olahraga"
           className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
         >
           <ArrowLeft className="size-4" aria-hidden="true" />
-          Kembali ke riwayat
+          {t.common.backToHistory}
         </Link>
       }
     >
@@ -130,7 +148,7 @@ export default function OlahragaDetailRoute() {
           <div className="flex items-center gap-2">
             <Dumbbell className="size-5 text-rose-600" aria-hidden="true" />
             <h2 className="text-base font-semibold text-foreground">
-              Edit catatan
+              {isEnglish ? "Edit record" : "Edit catatan"}
             </h2>
           </div>
           <form className="mt-5 grid gap-4" onSubmit={handleSubmit}>
@@ -139,7 +157,7 @@ export default function OlahragaDetailRoute() {
             ) : null}
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="grid gap-2 text-sm font-medium text-foreground">
-                Tanggal
+                {t.common.date}
                 <DateField
                   name="record_date"
                   defaultValue={normalizeDateInputValue(record.record_date)}
@@ -147,7 +165,7 @@ export default function OlahragaDetailRoute() {
                 />
               </label>
               <label className="grid gap-2 text-sm font-medium text-foreground">
-                Jenis olahraga
+                {isEnglish ? "Workout type" : "Jenis olahraga"}
                 <input
                   name="sport_type"
                   defaultValue={record.sport_type}
@@ -156,7 +174,7 @@ export default function OlahragaDetailRoute() {
                 />
               </label>
               <label className="grid gap-2 text-sm font-medium text-foreground">
-                Durasi menit
+                {isEnglish ? "Duration in minutes" : "Durasi menit"}
                 <input
                   type="number"
                   min="0"
@@ -168,12 +186,12 @@ export default function OlahragaDetailRoute() {
               <label className="flex items-end gap-3 text-sm font-medium text-foreground">
                 <span className="flex h-9 items-center gap-3 rounded-md border border-border px-3">
                   <input type="checkbox" name="completed" defaultChecked={record.completed} />
-                  Selesai
+                  {isEnglish ? "Completed" : "Selesai"}
                 </span>
               </label>
             </div>
             <label className="grid gap-2 text-sm font-medium text-foreground">
-              Catatan
+              {t.common.notes}
               <textarea
                 name="notes"
                 rows={4}
@@ -183,13 +201,21 @@ export default function OlahragaDetailRoute() {
             </label>
             <Button type="submit" className="w-fit">
               <Save aria-hidden="true" />
-              Simpan perubahan
+              {t.common.saveChanges}
             </Button>
           </form>
           <div className="mt-4">
             <DeleteConfirmation
-              title="Hapus catatan olahraga ini?"
-              description="Catatan olahraga yang dihapus tidak bisa dikembalikan lagi."
+              title={
+                isEnglish
+                  ? "Delete this workout record?"
+                  : "Hapus catatan olahraga ini?"
+              }
+              description={
+                isEnglish
+                  ? "Deleted workout records cannot be restored."
+                  : "Catatan olahraga yang dihapus tidak bisa dikembalikan lagi."
+              }
               isPending={isDeleting}
               onConfirm={handleDelete}
             />
@@ -197,22 +223,26 @@ export default function OlahragaDetailRoute() {
         </section>
 
         <section className="rounded-lg border border-border bg-card p-4 shadow-sm">
-          <h2 className="text-base font-semibold text-foreground">Ringkasan</h2>
+          <h2 className="text-base font-semibold text-foreground">{t.common.summary}</h2>
           <dl className="mt-4 grid gap-3 text-sm">
             <div>
-              <dt className="text-muted-foreground">Tanggal</dt>
+              <dt className="text-muted-foreground">{t.common.date}</dt>
               <dd className="font-medium text-foreground">
-                {formatRecordDate(record.record_date)}
+                {formatRecordDate(record.record_date, language)}
               </dd>
             </div>
             <div>
-              <dt className="text-muted-foreground">Jenis</dt>
+              <dt className="text-muted-foreground">
+                {isEnglish ? "Type" : "Jenis"}
+              </dt>
               <dd className="font-medium text-foreground">{record.sport_type}</dd>
             </div>
             <div>
-              <dt className="text-muted-foreground">Durasi</dt>
+              <dt className="text-muted-foreground">
+                {isEnglish ? "Duration" : "Durasi"}
+              </dt>
               <dd className="font-medium text-foreground">
-                {record.duration_minutes} menit
+                {record.duration_minutes} {isEnglish ? "minutes" : "menit"}
               </dd>
             </div>
           </dl>
@@ -222,6 +252,6 @@ export default function OlahragaDetailRoute() {
   );
 }
 
-function formatRecordDate(value: string) {
-  return formatDateOnlyForDisplay(value);
+function formatRecordDate(value: string, language: "id" | "en") {
+  return formatDateOnlyForDisplay(value, undefined, language);
 }

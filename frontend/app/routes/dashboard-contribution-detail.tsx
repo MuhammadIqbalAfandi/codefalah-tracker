@@ -20,7 +20,7 @@ import {
   getTodayDateInputValue,
   parseDateOnly,
 } from "~/lib/form-defaults";
-import { useLocale } from "~/lib/localization";
+import { useLocale, useTranslations } from "~/lib/localization";
 import { ApiError, apiRequest } from "~/services/api-client";
 
 type ModuleContributionResponse = {
@@ -279,6 +279,7 @@ export default function DashboardContributionDetailRoute() {
   const { module, label, description, graph, startDate, endDate, records } =
     useLoaderData<typeof loader>();
   const { language } = useLocale();
+  const t = useTranslations();
   const isEnglish = language === "en";
   const config = moduleConfigs[module];
   const Icon = config.icon;
@@ -296,7 +297,7 @@ export default function DashboardContributionDetailRoute() {
             className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
           >
             <ArrowLeft className="size-4" aria-hidden="true" />
-            {isEnglish ? "Back to dashboard" : "Kembali ke dashboard"}
+            {t.common.backToDashboard}
           </Link>
           <Link
             to={config.moduleHref}

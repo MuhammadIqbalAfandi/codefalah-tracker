@@ -12,6 +12,7 @@ import {
   formatDateOnlyForDisplay,
   normalizeDateInputValue,
 } from "~/lib/form-defaults";
+import { useLocale, useTranslations } from "~/lib/localization";
 import { notifyTrackerDataChanged } from "~/lib/tracker-sync";
 import { ApiError, apiRequest } from "~/services/api-client";
 
@@ -48,6 +49,9 @@ export async function loader({ params }: Route.LoaderArgs) {
 
 export default function JurnalDetailRoute() {
   const { record } = useLoaderData<typeof loader>();
+  const { language } = useLocale();
+  const t = useTranslations();
+  const isEnglish = language === "en";
   const navigate = useNavigate();
   const revalidator = useRevalidator();
   const [saveState, setSaveState] = useState<{
@@ -77,14 +81,19 @@ export default function JurnalDetailRoute() {
 
       setSaveState({
         tone: "success",
-        message: "Jurnal berhasil diperbarui.",
+        message: isEnglish ? "Journal entry was updated successfully." : "Jurnal berhasil diperbarui.",
       });
       notifyTrackerDataChanged();
       revalidator.revalidate();
     } catch (error) {
       setSaveState({
         tone: "error",
-        message: error instanceof Error ? error.message : "Gagal memperbarui jurnal.",
+        message:
+          error instanceof Error
+            ? error.message
+            : isEnglish
+              ? "Failed to update the journal entry."
+              : "Gagal memperbarui jurnal.",
       });
     }
   }
@@ -102,7 +111,12 @@ export default function JurnalDetailRoute() {
     } catch (error) {
       setSaveState({
         tone: "error",
-        message: error instanceof Error ? error.message : "Gagal menghapus jurnal.",
+        message:
+          error instanceof Error
+            ? error.message
+            : isEnglish
+              ? "Failed to delete the journal entry."
+              : "Gagal menghapus jurnal.",
       });
       setIsDeleting(false);
     }
@@ -110,15 +124,19 @@ export default function JurnalDetailRoute() {
 
   return (
     <MainLayout
-      title="Detail Jurnal"
-      description="Edit entri jurnal yang sudah tersimpan."
+      title={isEnglish ? "Journal Detail" : "Detail Jurnal"}
+      description={
+        isEnglish
+          ? "Edit a saved journal entry."
+          : "Edit entri jurnal yang sudah tersimpan."
+      }
       actions={
         <Link
           to="/jurnal"
           className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
         >
           <ArrowLeft className="size-4" aria-hidden="true" />
-          Kembali ke timeline
+          {t.common.backToTimeline}
         </Link>
       }
     >
@@ -127,7 +145,7 @@ export default function JurnalDetailRoute() {
           <div className="flex items-center gap-2">
             <BookOpenText className="size-5 text-muted-foreground" aria-hidden="true" />
             <h2 className="text-base font-semibold text-foreground">
-              Edit jurnal
+              {isEnglish ? "Edit journal" : "Edit jurnal"}
             </h2>
           </div>
           <form className="mt-5 grid gap-4" onSubmit={handleSubmit}>
@@ -136,7 +154,7 @@ export default function JurnalDetailRoute() {
             ) : null}
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="grid gap-2 text-sm font-medium text-foreground">
-                Tanggal
+                {t.common.date}
                 <DateField
                   name="entry_date"
                   defaultValue={normalizeDateInputValue(record.entry_date)}
@@ -153,7 +171,7 @@ export default function JurnalDetailRoute() {
               </label>
             </div>
             <label className="grid gap-2 text-sm font-medium text-foreground">
-              Judul
+              {isEnglish ? "Title" : "Judul"}
               <input
                 name="title"
                 defaultValue={record.title}
@@ -162,7 +180,7 @@ export default function JurnalDetailRoute() {
               />
             </label>
             <label className="grid gap-2 text-sm font-medium text-foreground">
-              Cerita
+              {isEnglish ? "Story" : "Cerita"}
               <textarea
                 name="content"
                 rows={8}
@@ -172,7 +190,7 @@ export default function JurnalDetailRoute() {
               />
             </label>
             <label className="grid gap-2 text-sm font-medium text-foreground">
-              Tag
+              {isEnglish ? "Tags" : "Tag"}
               <input
                 name="tags"
                 defaultValue={record.tags}
@@ -185,17 +203,21 @@ export default function JurnalDetailRoute() {
                 name="is_private"
                 defaultChecked={record.is_private}
               />
-              Private
+              {isEnglish ? "Private" : "Privat"}
             </label>
             <Button type="submit" className="w-fit">
               <Save aria-hidden="true" />
-              Simpan perubahan
+              {t.common.saveChanges}
             </Button>
           </form>
           <div className="mt-4">
             <DeleteConfirmation
-              title="Hapus jurnal ini?"
-              description="Entri jurnal yang dihapus tidak bisa dikembalikan lagi."
+              title={isEnglish ? "Delete this journal entry?" : "Hapus jurnal ini?"}
+              description={
+                isEnglish
+                  ? "Deleted journal entries cannot be restored."
+                  : "Entri jurnal yang dihapus tidak bisa dikembalikan lagi."
+              }
               isPending={isDeleting}
               onConfirm={handleDelete}
             />
@@ -203,22 +225,30 @@ export default function JurnalDetailRoute() {
         </section>
 
         <section className="rounded-lg border border-border bg-card p-4 shadow-sm">
-          <h2 className="text-base font-semibold text-foreground">Ringkasan</h2>
+          <h2 className="text-base font-semibold text-foreground">{t.common.summary}</h2>
           <dl className="mt-4 grid gap-3 text-sm">
             <div>
-              <dt className="text-muted-foreground">Tanggal</dt>
+              <dt className="text-muted-foreground">{t.common.date}</dt>
               <dd className="font-medium text-foreground">
-                {formatRecordDate(record.entry_date)}
+                {formatRecordDate(record.entry_date, language)}
               </dd>
             </div>
             <div>
-              <dt className="text-muted-foreground">Judul</dt>
+              <dt className="text-muted-foreground">
+                {isEnglish ? "Title" : "Judul"}
+              </dt>
               <dd className="font-medium text-foreground">{record.title}</dd>
             </div>
             <div>
-              <dt className="text-muted-foreground">Privasi</dt>
+              <dt className="text-muted-foreground">
+                {isEnglish ? "Privacy" : "Privasi"}
+              </dt>
               <dd className="font-medium text-foreground">
-                {record.is_private ? "Private" : "Publik"}
+                {record.is_private
+                  ? "Private"
+                  : isEnglish
+                    ? "Public"
+                    : "Publik"}
               </dd>
             </div>
           </dl>
@@ -228,6 +258,6 @@ export default function JurnalDetailRoute() {
   );
 }
 
-function formatRecordDate(value: string) {
-  return formatDateOnlyForDisplay(value);
+function formatRecordDate(value: string, language: "id" | "en") {
+  return formatDateOnlyForDisplay(value, undefined, language);
 }

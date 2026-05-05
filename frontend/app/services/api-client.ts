@@ -1,4 +1,5 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8080";
+import { API_BASE_URL } from "~/lib/env";
+import { getDocumentLanguage } from "~/lib/locale-config";
 
 export type ApiClientOptions = Omit<RequestInit, "body"> & {
   body?: unknown;
@@ -32,7 +33,9 @@ export async function apiRequest<T>(
     });
   } catch {
     throw new ApiError(
-      "Tidak dapat terhubung ke server. Pastikan backend berjalan dan database sudah siap.",
+      getDocumentLanguage() === "en"
+        ? "Unable to reach the server. Make sure the backend is running and the database is ready."
+        : "Tidak dapat terhubung ke server. Pastikan backend berjalan dan database sudah siap.",
       0,
     );
   }

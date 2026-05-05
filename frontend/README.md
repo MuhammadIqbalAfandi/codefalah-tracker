@@ -34,6 +34,25 @@ npm run dev
 
 Your application will be available at `http://localhost:5173`.
 
+### Environment
+
+Copy the frontend example file before starting local development:
+
+```bash
+cp .env.example .env
+```
+
+Important frontend values:
+
+- `VITE_API_BASE_URL` points the React Router app to the Go API
+- `VITE_APP_TIME_ZONE` keeps the frontend date helpers aligned with the app's local-calendar behavior
+
+The backend now follows its own scoped example file too:
+
+```bash
+cp ../backend/.env.example ../backend/.env
+```
+
 ## Building for Production
 
 Create a production build:
